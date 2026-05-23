@@ -145,8 +145,8 @@ An A4 page is roughly `794px` wide and `1123px` tall at 96 CSS pixels per inch, 
 Suggested API:
 
 ```svelte
-<PrintableFrame html={html} scale="fit-width" />
-<PrintableFrame html={html} scale={0.75} />
+<PrintableFrame {html} scale="fit-width" />
+<PrintableFrame {html} scale={0.75} />
 ```
 
 Prefer `transform: scale(...)` on an outer preview wrapper over CSS `zoom`. The transform should affect only the app preview surface, not the document HTML sent to Playwright.
@@ -286,12 +286,7 @@ Use Level 2 only if Level 1 still produces unacceptable line-break or layout dif
 Expected API:
 
 ```svelte
-<DocumentEditor
-	bind:editor
-	content={content}
-	format="A4"
-	onUpdate={handleUpdate}
-/>
+<DocumentEditor bind:editor {content} format="A4" onUpdate={handleUpdate} />
 ```
 
 The editor toolbar should not live inside the printable document unless it is intentionally part of the document.
@@ -316,7 +311,7 @@ Expected API:
 Keep explicit page breaks as:
 
 ```html
-<hr data-type="page-break">
+<hr data-type="page-break" />
 ```
 
 Print CSS:

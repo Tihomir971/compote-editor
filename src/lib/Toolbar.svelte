@@ -16,12 +16,16 @@
 	import PhTextAlignJustify from '~icons/ph/text-align-justify';
 	import PhListBullets from '~icons/ph/list-bullets';
 	import PhListNumbers from '~icons/ph/list-numbers';
+	import PhPrinter from '~icons/ph/printer';
+	import PhScissors from '~icons/ph/scissors';
 
-	let { editorState }: { editorState: { editor: Editor | null } } = $props();
+	let { editorState, onPrint }: { editorState: { editor: Editor | null }; onPrint?: () => void } =
+		$props();
 
 	const extensionNames = $derived(
 		editorState.editor!.extensionManager.extensions.map((e) => e.name)
 	);
+	const hasPageBreak = $derived(extensionNames.includes('pageBreak'));
 	const hasBold = $derived(extensionNames.includes('bold'));
 	const hasItalic = $derived(extensionNames.includes('italic'));
 	const hasUnderline = $derived(extensionNames.includes('underline'));
@@ -175,5 +179,26 @@
 				<ToggleGroup.Item value="underline"><PhTextUnderline /></ToggleGroup.Item>
 			{/if}
 		</ToggleGroup.Root>
+	{/if}
+
+	{#if hasPageBreak}
+		<div class="h-5 w-px bg-border"></div>
+		<Button
+			size="icon-sm"
+			variant="ghost"
+			aria-label="Insert page break"
+			onclick={() => ed().chain().focus().insertPageBreak().run()}
+		>
+			<PhScissors />
+		</Button>
+	{/if}
+
+	{#if onPrint}
+		<div class="ml-auto flex items-center gap-1">
+			<div class="h-5 w-px bg-border"></div>
+			<Button size="icon-sm" variant="ghost" aria-label="Print" onclick={onPrint}>
+				<PhPrinter />
+			</Button>
+		</div>
 	{/if}
 </div>

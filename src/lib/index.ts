@@ -6,6 +6,10 @@ export type { PageFormatKey, PageFormat } from './print/page-formats.js';
 export type { PagedJsDocumentOptions } from './print/build-printable-html.js';
 export type { PrintWithPagedJsOptions } from './print/print-with-pagedjs.js';
 export type { Editor as TiptapEditor, Extensions } from '@tiptap/core';
-export { PaginationPlus, PAGE_SIZES } from './extensions/tiptap-pagination-plus/index.js';
+export {
+	DocumentPagination,
+	type DocumentPaginationOptions
+} from './extensions/DocumentPagination.js';
+export { PAGE_SIZES } from './extensions/tiptap-pagination-plus/index.js';
 export { PageBreak } from './extensions/PageBreak.js';
-export type { PaginationPlusOptions, PageSize } from './extensions/tiptap-pagination-plus/index.js';
+export type { PageSize } from './extensions/tiptap-pagination-plus/index.js';

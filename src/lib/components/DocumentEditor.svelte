@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
+	import { cn, ScrollArea } from 'compote-ui';
 	import { Editor, type Extensions } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import Toolbar from '../Toolbar.svelte';
@@ -7,11 +8,10 @@
 	import { DOCUMENT_FONT_FACE_CSS } from '../print/embedded-fonts.js';
 	import { type PageFormatKey } from '../print/page-formats.js';
 	import {
-		PaginationPlus,
-		PAGE_SIZES,
-		type PaginationPlusOptions,
-		type PageSize
-	} from '../extensions/tiptap-pagination-plus/index.js';
+		DocumentPagination,
+		type DocumentPaginationOptions
+	} from '../extensions/DocumentPagination.js';
+	import { PAGE_SIZES, type PageSize } from '../extensions/tiptap-pagination-plus/index.js';
 
 	const FORMAT_TO_PAGE_SIZE: Record<PageFormatKey, PageSize> = {
 		A4: PAGE_SIZES.A4,
@@ -22,7 +22,8 @@
 		extensions?: Extensions;
 		content?: string;
 		format?: PageFormatKey;
-		pagination?: Partial<PaginationPlusOptions>;
+		pagination?: Partial<DocumentPaginationOptions>;
+		pageAreaBackground?: string;
 		class?: string;
 		onUpdate?: (html: string) => void;
 		onPrint?: () => void;
@@ -33,6 +34,7 @@
 		content = $bindable(''),
 		format = 'A4',
 		pagination = {},
+		pageAreaBackground = 'var(--color-surface-2, #2f2f2f)',
 		class: className = '',
 		onUpdate,
 		onPrint
@@ -57,11 +59,8 @@
 			element: editorEl!,
 			extensions: [
 				...extensions,
-				PaginationPlus.configure({
-					contentMarginTop: 0,
-					contentMarginBottom: 0,
-					footerRight: '',
-					pageBreakBackground: 'var(--color-surface-2)',
+				DocumentPagination.configure({
+					pageBreakBackground: 'var(--compote-document-page-area-background)',
 					pageGap: 20,
 					...pagination,
 					...pageSize
@@ -96,25 +95,39 @@
 </script>
 
 <div
-	class="compote-document-editor flex flex-col rounded-md border border-border bg-surface-1 {className}"
+	class={cn(
+		'compote-document-editor flex min-h-0 flex-col rounded-md border border-border bg-surface-1 h-[min(80vh,900px)]',
+		className
+	)}
 >
 	{#if editorState.editor}
 		<Toolbar {editorState} {onPrint} />
 	{/if}
-	<div class="flex justify-center overflow-auto bg-surface-2 p-6">
-		<div bind:this={editorEl}></div>
-	</div>
+	<ScrollArea.Root class="min-h-0 flex-1">
+		<ScrollArea.Viewport>
+			<ScrollArea.Content class="min-h-full p-0">
+				<div
+					class="min-h-full p-6"
+					style={`--compote-document-page-area-background: ${pageAreaBackground}; background: ${pageAreaBackground};`}
+				>
+					<div class="flex min-w-max justify-center">
+						<div bind:this={editorEl}></div>
+					</div>
+				</div>
+			</ScrollArea.Content>
+		</ScrollArea.Viewport>
+		<ScrollArea.Scrollbar orientation="vertical">
+			<ScrollArea.Thumb />
+		</ScrollArea.Scrollbar>
+		<ScrollArea.Scrollbar orientation="horizontal">
+			<ScrollArea.Thumb />
+		</ScrollArea.Scrollbar>
+		<ScrollArea.Corner />
+	</ScrollArea.Root>
 </div>
 
 <style>
-	:global(.rm-with-pagination) {
-		outline: none;
-		min-height: 4em;
-		background: white;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-	}
-
-	:global(.rm-with-pagination p.is-editor-empty:first-child::before) {
+	:global(.cdp-with-pagination p.is-editor-empty:first-child::before) {
 		content: attr(data-placeholder);
 		float: left;
 		color: #aaa;

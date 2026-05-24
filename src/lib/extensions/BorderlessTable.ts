@@ -32,8 +32,8 @@ export const BorderlessTable = Table.extend({
 			borderless: {
 				default: false,
 				parseHTML: (el) => el.classList.contains('no-border'),
-				renderHTML: (attrs) => (attrs.borderless ? { class: 'no-border' } : {}),
-			},
+				renderHTML: (attrs) => (attrs.borderless ? { class: 'no-border' } : {})
+			}
 		};
 	},
 
@@ -49,14 +49,17 @@ export const BorderlessTable = Table.extend({
 						if (node.type.name === 'table') {
 							if (dispatch) {
 								const pos = $from.before(d);
-								tr.setNodeMarkup(pos, undefined, { ...node.attrs, borderless: !node.attrs.borderless });
+								tr.setNodeMarkup(pos, undefined, {
+									...node.attrs,
+									borderless: !node.attrs.borderless
+								});
 								dispatch(tr);
 							}
 							return true;
 						}
 					}
 					return false;
-				},
+				}
 		};
-	},
+	}
 });

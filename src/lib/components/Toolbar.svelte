@@ -43,7 +43,9 @@
 	const hasHorizontalRule = $derived(extensionNames.includes('horizontalRule'));
 	const hasTable = $derived(extensionNames.includes('table'));
 	const inTable = $derived(hasTable && editorState.editor!.isActive('table'));
-	const isTableBorderless = $derived(inTable && editorState.editor!.isActive('table', { borderless: true }));
+	const isTableBorderless = $derived(
+		inTable && editorState.editor!.isActive('table', { borderless: true })
+	);
 	const hasFontSize = $derived(extensionNames.includes('fontSize'));
 	const hasBold = $derived(extensionNames.includes('bold'));
 	const hasItalic = $derived(extensionNames.includes('italic'));
@@ -91,10 +93,10 @@
 	// Effective pt size per block type when no explicit font-size is set (matches em multipliers in typography.css)
 	const BLOCK_DEFAULT_PT: Record<string, number> = {
 		paragraph: BASE_PT,
-		h1: BASE_PT * 2,       // 22pt
-		h2: BASE_PT * 1.5,     // 16.5pt
-		h3: BASE_PT * 1.25,    // 13.75pt
-		h4: BASE_PT,           // 11pt
+		h1: BASE_PT * 2, // 22pt
+		h2: BASE_PT * 1.5, // 16.5pt
+		h3: BASE_PT * 1.25, // 13.75pt
+		h4: BASE_PT // 11pt
 	};
 
 	function snapToList(pt: number): string {
@@ -269,7 +271,10 @@
 		<Menu.Root
 			onSelect={({ value }: { value: string }) => {
 				const chain = ed().chain().focus();
-				if (value === 'toggle-borders') { ed().chain().focus().toggleTableBorderless().run(); return; }
+				if (value === 'toggle-borders') {
+					ed().chain().focus().toggleTableBorderless().run();
+					return;
+				}
 				if (value === 'insert') chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true });
 				else if (value === 'col-before') chain.addColumnBefore();
 				else if (value === 'col-after') chain.addColumnAfter();
@@ -304,7 +309,9 @@
 					<Menu.Item value="merge">Merge cells</Menu.Item>
 					<Menu.Item value="split">Split cell</Menu.Item>
 					<Menu.Separator />
-					<Menu.Item value="toggle-borders">{isTableBorderless ? 'Show borders' : 'Hide borders'}</Menu.Item>
+					<Menu.Item value="toggle-borders"
+						>{isTableBorderless ? 'Show borders' : 'Hide borders'}</Menu.Item
+					>
 					<Menu.Separator />
 					<Menu.Item value="delete-table">Delete table</Menu.Item>
 				{/if}

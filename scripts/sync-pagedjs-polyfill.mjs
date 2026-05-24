@@ -6,4 +6,3 @@ const target = resolve('src/lib/print/paged.polyfill.txt');
 
 mkdirSync(dirname(target), { recursive: true });
 copyFileSync(source, target);
-

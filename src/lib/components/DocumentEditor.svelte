@@ -7,7 +7,6 @@
 	import { FontSize, TextStyle } from '@tiptap/extension-text-style';
 	import Superscript from '@tiptap/extension-superscript';
 	import Subscript from '@tiptap/extension-subscript';
-	import Underline from '@tiptap/extension-underline';
 	import { TableKit } from '@tiptap/extension-table';
 	import Toolbar from './Toolbar.svelte';
 	import typographyCss from '../print/typography.css?raw';
@@ -32,7 +31,6 @@
 		TextAlign.configure({ types: ['heading', 'paragraph'] }),
 		TextStyle,
 		FontSize,
-		Underline,
 		Superscript,
 		Subscript,
 		TableKit.configure({

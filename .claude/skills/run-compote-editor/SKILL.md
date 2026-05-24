@@ -83,16 +83,16 @@ const fullHtml = buildPagedJsHtml({ content: html, format: 'A4', lang: 'en' });
 
 `DocumentEditor` loads the supported editing extensions by default. The toolbar auto-detects loaded extensions and shows only the relevant buttons. Typography CSS (`.document-content`) styles the output for these node/mark types both in the editor and in print.
 
-| Extension     | Package                         | Toolbar button | Notes                                                                                                                   |
-| ------------- | ------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `StarterKit`  | `@tiptap/starter-kit`           | —              | Bundle: Bold, Italic, Heading, History, BulletList, OrderedList, Code, CodeBlock, Blockquote, HorizontalRule, HardBreak |
-| `underline`   | `@tiptap/extension-underline`   | U              | Not in StarterKit — add separately                                                                                      |
-| `textAlign`   | `@tiptap/extension-text-align`  | ← ↔ → ≡        | Configure with `types: ['heading', 'paragraph']`                                                                        |
-| `PageBreak`   | `compote-editor`                | ✂              | Exported from this library                                                                                              |
-| `fontSize`    | `@tiptap/extension-text-style`  | size select    | Loaded with `TextStyle`                                                                                                 |
-| `superscript` | `@tiptap/extension-superscript` | x²             | Superscript mark                                                                                                        |
-| `subscript`   | `@tiptap/extension-subscript`   | x₂             | Subscript mark                                                                                                          |
-| `table`       | `@tiptap/extension-table`       | table menu     | Loaded via `TableKit` with resizable tables                                                                             |
+| Extension     | Package                         | Toolbar button | Notes                                                                                                                    |
+| ------------- | ------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `StarterKit`  | `@tiptap/starter-kit`           | undo/redo      | Bundle: Bold, Italic, Underline, Heading, UndoRedo, BulletList, OrderedList, Code, CodeBlock, Blockquote, HorizontalRule |
+| `underline`   | `@tiptap/starter-kit`           | U              | Included through StarterKit                                                                                              |
+| `textAlign`   | `@tiptap/extension-text-align`  | ← ↔ → ≡        | Configure with `types: ['heading', 'paragraph']`                                                                         |
+| `PageBreak`   | `compote-editor`                | ✂              | Exported from this library                                                                                               |
+| `fontSize`    | `@tiptap/extension-text-style`  | size select    | Loaded with `TextStyle`                                                                                                  |
+| `superscript` | `@tiptap/extension-superscript` | x²             | Superscript mark                                                                                                         |
+| `subscript`   | `@tiptap/extension-subscript`   | x₂             | Subscript mark                                                                                                           |
+| `table`       | `@tiptap/extension-table`       | table menu     | Loaded via `TableKit` with resizable tables                                                                              |
 
 Extensions not listed above (e.g. `TaskList`, `Table`, `Image`) have no toolbar button but their HTML is styled by `typography.css` if you add them — the editor will render them correctly, they just won't appear in the toolbar.
 
@@ -111,12 +111,46 @@ import { PageBreak } from 'compote-editor';
 
 ### Adding TipTap extensions
 
-```ts
-import CustomExtension from './custom-extension';
+All supported toolbar extensions are already loaded by default:
 
-extensions={[CustomExtension]}
-// The toolbar auto-detects which extensions are loaded and shows
-// only the relevant buttons (heading, lists, alignment, bold/italic/underline, page break).
+```ts
+import StarterKit from '@tiptap/starter-kit';
+import TextAlign from '@tiptap/extension-text-align';
+import { TextStyle, FontSize } from '@tiptap/extension-text-style';
+import Superscript from '@tiptap/extension-superscript';
+import Subscript from '@tiptap/extension-subscript';
+import { TableKit } from '@tiptap/extension-table';
+import { PageBreak } from 'compote-editor';
+
+const supportedDefaults = [
+	StarterKit,
+	TextAlign.configure({ types: ['heading', 'paragraph'] }),
+	TextStyle,
+	FontSize,
+	Superscript,
+	Subscript,
+	TableKit.configure({
+		table: { resizable: true }
+	}),
+	PageBreak
+];
+```
+
+Pass `extensions` only when adding custom extensions or overriding one of the defaults. Extensions are merged by extension name, so a configured default replaces the built-in one instead of duplicating it.
+
+```svelte
+<script lang="ts">
+	import { DocumentEditor } from 'compote-editor';
+	import TextAlign from '@tiptap/extension-text-align';
+	import CustomExtension from './custom-extension';
+
+	let html = $state('');
+</script>
+
+<DocumentEditor
+	bind:content={html}
+	extensions={[TextAlign.configure({ types: ['heading'] }), CustomExtension]}
+/>
 ```
 
 ## Live pagination options

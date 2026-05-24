@@ -50,7 +50,7 @@
 	const hasSuperscript = $derived(extensionNames.includes('superscript'));
 	const hasSubscript = $derived(extensionNames.includes('subscript'));
 	const hasHeading = $derived(extensionNames.includes('heading'));
-	const hasHistory = $derived(extensionNames.includes('history'));
+	const hasUndoRedo = $derived(extensionNames.includes('undoRedo'));
 	const hasInlineFormatting = $derived(
 		hasBold || hasItalic || hasUnderline || hasSuperscript || hasSubscript
 	);
@@ -111,24 +111,24 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-1 border-b border-border p-1">
-	{#if hasHistory}
+	{#if hasUndoRedo}
 		<Button
-			size="icon-sm"
+			size="icon"
 			variant="ghost"
 			aria-label="Undo"
 			disabled={!editorState.editor!.can().undo()}
 			onclick={() => ed().chain().focus().undo().run()}
 		>
-			<PhArrowCounterClockwise />
+			<PhArrowCounterClockwise class="size-6" />
 		</Button>
 		<Button
-			size="icon-sm"
+			size="icon"
 			variant="ghost"
 			aria-label="Redo"
 			disabled={!editorState.editor!.can().redo()}
 			onclick={() => ed().chain().focus().redo().run()}
 		>
-			<PhArrowClockwise />
+			<PhArrowClockwise class="size-6" />
 		</Button>
 		<div class="h-5 w-px bg-border"></div>
 	{/if}
@@ -328,19 +328,13 @@
 		<div class="ml-auto flex items-center gap-1">
 			<div class="h-5 w-px bg-border"></div>
 			{#if onSave}
-				<Button
-					size="icon-sm"
-					variant="ghost"
-					aria-label="Save"
-					disabled={isSaving}
-					onclick={onSave}
-				>
-					<PhFloppyDisk />
+				<Button size="icon" variant="ghost" aria-label="Save" disabled={isSaving} onclick={onSave}>
+					<PhFloppyDisk class="size-6" />
 				</Button>
 			{/if}
 			{#if onPrint}
-				<Button size="icon-sm" variant="ghost" aria-label="Print" onclick={onPrint}>
-					<PhPrinter />
+				<Button size="icon" variant="ghost" aria-label="Print" onclick={onPrint}>
+					<PhPrinter class="size-6" />
 				</Button>
 			{/if}
 		</div>

@@ -2,7 +2,20 @@
 	import { DocumentEditor } from '$lib';
 
 	let html = $state(
-		'<h1>Hello compote-editor!</h1><p>Try selecting text and using the toolbar above. StarterKit is loaded by default; TextAlign is added here as an extra.</p><h2>Second heading</h2><p>Another paragraph with <strong>bold</strong> and <em>italic</em> text.</p><ul><li>Item one</li><li>Item two</li><li>Item three</li></ul>'
+		`<h1>Hello compote-editor!</h1>
+<p>All supported editing extensions are loaded by default.</p>
+<h2>Inline formatting</h2>
+<p>This paragraph includes <strong>bold</strong>, <em>italic</em>, <u>underline</u>, H<sub>2</sub>O, and x<sup>2</sup>.</p>
+<p><span style="font-size: 18pt">This sentence uses the font size extension.</span></p>
+<h2>Lists and alignment</h2>
+<ul><li>Bullet item one</li><li>Bullet item two</li><li>Bullet item three</li></ul>
+<ol><li>Ordered item one</li><li>Ordered item two</li></ol>
+<p style="text-align: center">This paragraph is centered with TextAlign.</p>
+<h2>Table</h2>
+<table><tbody><tr><th>Name</th><th>Status</th><th>Notes</th></tr><tr><td>StarterKit</td><td>Default</td><td>Headings, lists, history, code, blockquote, horizontal rule</td></tr><tr><td>TableKit</td><td>Default</td><td>Resizable table support</td></tr></tbody></table>
+<div data-type="page-break"></div>
+<h2>After page break</h2>
+<p>This content starts after a manual page break.</p>`
 	);
 
 	function save() {

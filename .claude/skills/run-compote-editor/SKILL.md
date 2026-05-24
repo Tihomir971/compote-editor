@@ -17,33 +17,43 @@ bun add svelte@^5
 
 ```svelte
 <script lang="ts">
-	import { DocumentEditor, printWithPagedJs, PageBreak } from 'compote-editor';
-	import StarterKit from '@tiptap/starter-kit';
+	import { DocumentEditor } from 'compote-editor';
 
 	let html = $state('');
 </script>
 
-<DocumentEditor
-	extensions={[StarterKit, PageBreak]}
-	bind:content={html}
-	format="A4"
-	onPrint={() => printWithPagedJs({ content: html, format: 'A4' })}
-/>
+<DocumentEditor bind:content={html} format="A4" />
 ```
 
 ## `DocumentEditor` props
 
-| Prop         | Type                             | Default        | Description                        |
-| ------------ | -------------------------------- | -------------- | ---------------------------------- |
-| `extensions` | `Extensions`                     | `[StarterKit]` | TipTap extensions to load          |
-| `content`    | `string` (bindable)              | `''`           | HTML content — two-way bound       |
-| `format`     | `'A4' \| 'Letter'`               | `'A4'`         | Page size                          |
-| `pagination` | `Partial<PaginationPlusOptions>` | `{}`           | Override live pagination config    |
-| `class`      | `string`                         | `''`           | Extra CSS classes on outer wrapper |
-| `onUpdate`   | `(html: string) => void`         | —              | Called on every edit               |
-| `onPrint`    | `() => void`                     | —              | Wires up the print toolbar button  |
+| Prop         | Type                                             | Default        | Description                                          |
+| ------------ | ------------------------------------------------ | -------------- | ---------------------------------------------------- |
+| `extensions` | `Extensions`                                     | `[]`           | Extra TipTap extensions to load or override defaults |
+| `content`    | `string` (bindable)                              | `''`           | HTML content — two-way bound                         |
+| `format`     | `'A4' \| 'Letter'`                               | `'A4'`         | Page size                                            |
+| `pagination` | `Partial<PaginationPlusOptions>`                 | `{}`           | Override live pagination config                      |
+| `class`      | `string`                                         | `''`           | Extra CSS classes on outer wrapper                   |
+| `onUpdate`   | `(html: string) => void`                         | —              | Called on every edit                                 |
+| `onSave`     | `({ content, editor }) => void \| Promise<void>` | —              | Shows the save toolbar button and wires Ctrl/Cmd+S   |
+| `onPrint`    | `() => void`                                     | built-in print | Override the print toolbar button                    |
 
 `bind:content` gives you the serialized HTML on every keystroke. Use `onUpdate` instead if you only want to react (no two-way binding needed).
+
+## Saving
+
+`DocumentEditor` does not persist content itself. Pass `onSave` when the client app wants a save button and Ctrl/Cmd+S behavior:
+
+```svelte
+<DocumentEditor
+	bind:content={html}
+	onSave={async ({ content }) => {
+		await saveDocument(content);
+	}}
+/>
+```
+
+The save callback receives the current HTML content and TipTap editor instance. Async saves disable the save button until the promise settles.
 
 ## Printing
 
@@ -57,6 +67,8 @@ printWithPagedJs({ content: html, format: 'A4' });
 // No new tab opens.
 ```
 
+`DocumentEditor` uses this helper by default for its print toolbar button. Pass `onPrint` only if your app needs custom behavior.
+
 ### Generate printable HTML string (for headless / server PDF)
 
 ```ts
@@ -67,16 +79,20 @@ const fullHtml = buildPagedJsHtml({ content: html, format: 'A4', lang: 'en' });
 // Pass to headless Chrome / puppeteer / playwright for PDF generation.
 ```
 
-## Supported extensions
+## Default supported extensions
 
-The toolbar auto-detects loaded extensions and shows only the relevant buttons. Typography CSS (`.document-content`) styles the output for these node/mark types both in the editor and in print.
+`DocumentEditor` loads the supported editing extensions by default. The toolbar auto-detects loaded extensions and shows only the relevant buttons. Typography CSS (`.document-content`) styles the output for these node/mark types both in the editor and in print.
 
-| Extension    | Package                        | Toolbar button | Notes                                                                                                                   |
-| ------------ | ------------------------------ | -------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `StarterKit` | `@tiptap/starter-kit`          | —              | Bundle: Bold, Italic, Heading, History, BulletList, OrderedList, Code, CodeBlock, Blockquote, HorizontalRule, HardBreak |
-| `underline`  | `@tiptap/extension-underline`  | U              | Not in StarterKit — add separately                                                                                      |
-| `textAlign`  | `@tiptap/extension-text-align` | ← ↔ → ≡        | Configure with `types: ['heading', 'paragraph']`                                                                        |
-| `PageBreak`  | `compote-editor`               | ✂              | Exported from this library                                                                                              |
+| Extension     | Package                         | Toolbar button | Notes                                                                                                                   |
+| ------------- | ------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `StarterKit`  | `@tiptap/starter-kit`           | —              | Bundle: Bold, Italic, Heading, History, BulletList, OrderedList, Code, CodeBlock, Blockquote, HorizontalRule, HardBreak |
+| `underline`   | `@tiptap/extension-underline`   | U              | Not in StarterKit — add separately                                                                                      |
+| `textAlign`   | `@tiptap/extension-text-align`  | ← ↔ → ≡        | Configure with `types: ['heading', 'paragraph']`                                                                        |
+| `PageBreak`   | `compote-editor`                | ✂              | Exported from this library                                                                                              |
+| `fontSize`    | `@tiptap/extension-text-style`  | size select    | Loaded with `TextStyle`                                                                                                 |
+| `superscript` | `@tiptap/extension-superscript` | x²             | Superscript mark                                                                                                        |
+| `subscript`   | `@tiptap/extension-subscript`   | x₂             | Subscript mark                                                                                                          |
+| `table`       | `@tiptap/extension-table`       | table menu     | Loaded via `TableKit` with resizable tables                                                                             |
 
 Extensions not listed above (e.g. `TaskList`, `Table`, `Image`) have no toolbar button but their HTML is styled by `typography.css` if you add them — the editor will render them correctly, they just won't appear in the toolbar.
 
@@ -87,25 +103,18 @@ Extensions not listed above (e.g. `TaskList`, `Table`, `Image`) have no toolbar 
 ```ts
 import { PageBreak } from 'compote-editor';
 
-// Add to the extensions array.
+// Loaded by default.
 // Keyboard: Ctrl/Cmd+Enter inserts a break.
 // In editor: shows as a dashed line.
 // In print: CSS break-after: page.
-extensions={[StarterKit, PageBreak]}
 ```
 
 ### Adding TipTap extensions
 
 ```ts
-import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
+import CustomExtension from './custom-extension';
 
-extensions={[
-  StarterKit,
-  PageBreak,
-  TextAlign.configure({ types: ['heading', 'paragraph'] }),
-  Underline,
-]}
+extensions={[CustomExtension]}
 // The toolbar auto-detects which extensions are loaded and shows
 // only the relevant buttons (heading, lists, alignment, bold/italic/underline, page break).
 ```

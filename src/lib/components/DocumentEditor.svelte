@@ -3,20 +3,43 @@
 	import { cn, ScrollArea } from 'compote-ui';
 	import { Editor, type Extensions } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
+	import TextAlign from '@tiptap/extension-text-align';
+	import { FontSize, TextStyle } from '@tiptap/extension-text-style';
+	import Superscript from '@tiptap/extension-superscript';
+	import Subscript from '@tiptap/extension-subscript';
+	import Underline from '@tiptap/extension-underline';
+	import { TableKit } from '@tiptap/extension-table';
 	import Toolbar from './Toolbar.svelte';
 	import typographyCss from '../print/typography.css?raw';
 	import { DOCUMENT_FONT_FACE_CSS } from '../print/embedded-fonts.js';
 	import { type PageFormatKey } from '../print/page-formats.js';
+	import { printWithPagedJs } from '../print/print-with-pagedjs.js';
+	import { PageBreak } from '../extensions/PageBreak.js';
 	import {
 		DocumentPagination,
 		type DocumentPaginationOptions
 	} from '../extensions/DocumentPagination.js';
 	import { PAGE_SIZES, type PageSize } from '../extensions/page-sizes.js';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	const FORMAT_TO_PAGE_SIZE: Record<PageFormatKey, PageSize> = {
 		A4: PAGE_SIZES.A4,
 		Letter: PAGE_SIZES.LETTER
 	};
+
+	const DEFAULT_EXTENSIONS: Extensions = [
+		StarterKit,
+		TextAlign.configure({ types: ['heading', 'paragraph'] }),
+		TextStyle,
+		FontSize,
+		Underline,
+		Superscript,
+		Subscript,
+		TableKit.configure({
+			table: { resizable: true }
+		}),
+		PageBreak
+	];
 
 	interface Props {
 		extensions?: Extensions;
@@ -26,24 +49,39 @@
 		pageAreaClass?: string;
 		class?: string;
 		onUpdate?: (html: string) => void;
+		onSave?: (payload: { content: string; editor: Editor }) => void | Promise<void>;
 		onPrint?: () => void;
 	}
 
 	let {
-		extensions = [StarterKit],
+		extensions = [],
 		content = $bindable(''),
 		format = 'A4',
 		pagination = {},
 		pageAreaClass = 'bg-surface-2',
 		class: className = '',
 		onUpdate,
+		onSave,
 		onPrint
 	}: Props = $props();
 
 	let editorEl = $state<HTMLElement | null>(null);
 	let editorState = $state<{ editor: Editor | null }>({ editor: null });
+	let isSaving = $state(false);
 
 	const STYLE_ID = 'compote-document-css';
+
+	function resolveExtensions(extensions: Extensions): Extensions {
+		const extensionMap = new SvelteMap(
+			DEFAULT_EXTENSIONS.map((extension) => [extension.name, extension])
+		);
+
+		for (const extension of extensions) {
+			extensionMap.set(extension.name, extension);
+		}
+
+		return [...extensionMap.values()];
+	}
 
 	onMount(() => {
 		if (!document.getElementById(STYLE_ID)) {
@@ -58,7 +96,7 @@
 		const e = new Editor({
 			element: editorEl!,
 			extensions: [
-				...extensions,
+				...resolveExtensions(extensions),
 				DocumentPagination.configure({
 					pageGapClass: pageAreaClass,
 					pageGap: 20,
@@ -91,8 +129,39 @@
 		});
 	});
 
+	function handlePrint() {
+		if (onPrint) {
+			onPrint();
+			return;
+		}
+
+		printWithPagedJs({ content, format });
+	}
+
+	async function handleSave() {
+		const editor = editorState.editor;
+
+		if (!onSave || !editor || isSaving) return;
+
+		isSaving = true;
+		try {
+			await onSave({ content, editor });
+		} finally {
+			isSaving = false;
+		}
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (!onSave || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') return;
+
+		event.preventDefault();
+		void handleSave();
+	}
+
 	onDestroy(() => editorState.editor?.destroy());
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div
 	class={cn(
@@ -101,7 +170,12 @@
 	) ?? ''}
 >
 	{#if editorState.editor}
-		<Toolbar {editorState} {onPrint} />
+		<Toolbar
+			{editorState}
+			onSave={onSave ? handleSave : undefined}
+			{isSaving}
+			onPrint={handlePrint}
+		/>
 	{/if}
 	<ScrollArea.Root class="min-h-0 flex-1">
 		<ScrollArea.Viewport>

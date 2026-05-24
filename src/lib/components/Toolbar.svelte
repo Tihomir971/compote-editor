@@ -16,6 +16,7 @@
 	import PhTextAlignJustify from '~icons/ph/text-align-justify';
 	import PhListBullets from '~icons/ph/list-bullets';
 	import PhListNumbers from '~icons/ph/list-numbers';
+	import PhFloppyDisk from '~icons/ph/floppy-disk';
 	import PhPrinter from '~icons/ph/printer';
 	import PhMinus from '~icons/ph/minus';
 	import PhTable from '~icons/ph/table';
@@ -23,8 +24,17 @@
 	import PhTextSubscript from '~icons/ph/text-subscript';
 	import PhTextSuperscript from '~icons/ph/text-superscript';
 
-	let { editorState, onPrint }: { editorState: { editor: Editor | null }; onPrint?: () => void } =
-		$props();
+	let {
+		editorState,
+		onSave,
+		isSaving = false,
+		onPrint
+	}: {
+		editorState: { editor: Editor | null };
+		onSave?: () => void | Promise<void>;
+		isSaving?: boolean;
+		onPrint?: () => void;
+	} = $props();
 
 	const extensionNames = $derived(
 		editorState.editor!.extensionManager.extensions.map((e) => e.name)
@@ -314,12 +324,25 @@
 		{/if}
 	{/if}
 
-	{#if onPrint}
+	{#if onSave || onPrint}
 		<div class="ml-auto flex items-center gap-1">
 			<div class="h-5 w-px bg-border"></div>
-			<Button size="icon-sm" variant="ghost" aria-label="Print" onclick={onPrint}>
-				<PhPrinter />
-			</Button>
+			{#if onSave}
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					aria-label="Save"
+					disabled={isSaving}
+					onclick={onSave}
+				>
+					<PhFloppyDisk />
+				</Button>
+			{/if}
+			{#if onPrint}
+				<Button size="icon-sm" variant="ghost" aria-label="Print" onclick={onPrint}>
+					<PhPrinter />
+				</Button>
+			{/if}
 		</div>
 	{/if}
 </div>

@@ -4,7 +4,9 @@
 			"Bash(Get-ChildItem -Path \"C:\\\\Users\\\\tihom\\\\Desktop\\\\Development\\\\shared\\\\compote-editor\" -Depth 2)",
 			"Bash(Select-Object FullName, PSIsContainer)",
 			"Bash(Format-Table -AutoSize)",
-			"mcp__svelte-mcp__get-documentation"
+			"mcp__svelte-mcp__get-documentation",
+			"Bash(Get-ChildItem -Path \"src\\\\lib\" -Recurse -Directory)",
+			"Bash(Select-Object -ExpandProperty FullName)"
 		]
 	}
 }

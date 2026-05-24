@@ -11,7 +11,7 @@
 		DocumentPagination,
 		type DocumentPaginationOptions
 	} from '../extensions/DocumentPagination.js';
-	import { PAGE_SIZES, type PageSize } from '../extensions/tiptap-pagination-plus/index.js';
+	import { PAGE_SIZES, type PageSize } from '../extensions/page-sizes.js';
 
 	const FORMAT_TO_PAGE_SIZE: Record<PageFormatKey, PageSize> = {
 		A4: PAGE_SIZES.A4,
@@ -23,7 +23,7 @@
 		content?: string;
 		format?: PageFormatKey;
 		pagination?: Partial<DocumentPaginationOptions>;
-		pageAreaBackground?: string;
+		pageAreaClass?: string;
 		class?: string;
 		onUpdate?: (html: string) => void;
 		onPrint?: () => void;
@@ -34,7 +34,7 @@
 		content = $bindable(''),
 		format = 'A4',
 		pagination = {},
-		pageAreaBackground = 'var(--color-surface-2, #2f2f2f)',
+		pageAreaClass = 'bg-surface-2',
 		class: className = '',
 		onUpdate,
 		onPrint
@@ -60,7 +60,7 @@
 			extensions: [
 				...extensions,
 				DocumentPagination.configure({
-					pageBreakBackground: 'var(--compote-document-page-area-background)',
+					pageGapClass: pageAreaClass,
 					pageGap: 20,
 					...pagination,
 					...pageSize
@@ -98,7 +98,7 @@
 	class={cn(
 		'compote-document-editor flex min-h-0 flex-col rounded-md border border-border bg-surface-1 h-[min(80vh,900px)]',
 		className
-	)}
+	) ?? ''}
 >
 	{#if editorState.editor}
 		<Toolbar {editorState} {onPrint} />
@@ -106,10 +106,7 @@
 	<ScrollArea.Root class="min-h-0 flex-1">
 		<ScrollArea.Viewport>
 			<ScrollArea.Content class="min-h-full p-0">
-				<div
-					class="min-h-full p-6"
-					style={`--compote-document-page-area-background: ${pageAreaBackground}; background: ${pageAreaBackground};`}
-				>
+				<div class={cn('min-h-full p-6', pageAreaClass) ?? ''}>
 					<div class="flex min-w-max justify-center">
 						<div bind:this={editorEl}></div>
 					</div>

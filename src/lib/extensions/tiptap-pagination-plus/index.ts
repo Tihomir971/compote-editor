@@ -1,5 +1,0 @@
-import { PaginationPlus, type PaginationPlusOptions } from './PaginationPlus';
-
-export { PaginationPlus, type PaginationPlusOptions };
-export { PAGE_SIZES, type PageSize } from './constants';
-export type * from './types';

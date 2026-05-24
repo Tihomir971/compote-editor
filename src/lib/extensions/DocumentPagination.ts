@@ -1,7 +1,8 @@
 import { Extension, type CommandProps } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
-import type { PageSize } from './tiptap-pagination-plus/constants';
+import { cn } from 'compote-ui';
+import type { PageSize } from './page-sizes.js';
 
 export interface DocumentPaginationOptions {
 	enabled: boolean;
@@ -12,7 +13,7 @@ export interface DocumentPaginationOptions {
 	marginLeft: number;
 	marginRight: number;
 	pageGap: number;
-	pageBreakBackground: string;
+	pageGapClass: string;
 	pageGapBorderColor: string;
 }
 
@@ -36,7 +37,7 @@ const defaultOptions: DocumentPaginationOptions = {
 	marginLeft: 50,
 	marginRight: 50,
 	pageGap: 50,
-	pageBreakBackground: '#ffffff',
+	pageGapClass: '',
 	pageGapBorderColor: '#e5e5e5'
 };
 
@@ -47,7 +48,6 @@ const measuredMetaKey = 'DOCUMENT_PAGINATION_MEASURED';
 declare module '@tiptap/core' {
 	interface Commands<ReturnType> {
 		DocumentPagination: {
-			updatePageBreakBackground: (color: string) => ReturnType;
 			updatePageSize: (size: PageSize) => ReturnType;
 			updatePageHeight: (height: number) => ReturnType;
 			updatePageWidth: (width: number) => ReturnType;
@@ -69,29 +69,7 @@ declare module '@tiptap/core' {
 	}
 }
 
-const getAncestorBackground = (targetNode: HTMLElement) => {
-	let element = targetNode.parentElement;
-
-	while (element) {
-		const backgroundColor = getComputedStyle(element).backgroundColor;
-		if (
-			backgroundColor &&
-			backgroundColor !== 'transparent' &&
-			backgroundColor !== 'rgba(0, 0, 0, 0)'
-		) {
-			return backgroundColor;
-		}
-		element = element.parentElement;
-	}
-
-	return defaultOptions.pageBreakBackground;
-};
-
 const applyCssVariables = (targetNode: HTMLElement, options: DocumentPaginationOptions) => {
-	const pageBreakBackground =
-		options.pageBreakBackground === 'auto'
-			? getAncestorBackground(targetNode)
-			: options.pageBreakBackground;
 	const variables = {
 		'cdp-page-height': `${options.pageHeight}px`,
 		'cdp-page-width': `${options.pageWidth}px`,
@@ -100,7 +78,6 @@ const applyCssVariables = (targetNode: HTMLElement, options: DocumentPaginationO
 		'cdp-margin-left': `${options.marginLeft}px`,
 		'cdp-margin-right': `${options.marginRight}px`,
 		'cdp-page-gap': `${options.pageGap}px`,
-		'cdp-page-break-background': pageBreakBackground,
 		'cdp-page-gap-border-color': options.pageGapBorderColor
 	};
 
@@ -151,7 +128,6 @@ const ensureStyleElement = () => {
       height: var(--cdp-page-gap);
       margin-left: calc(-1 * var(--cdp-margin-left));
       margin-right: calc(-1 * var(--cdp-margin-right));
-      background: var(--cdp-page-break-background);
     }
 
     .cdp-next-page-margin {
@@ -264,7 +240,7 @@ const buildDecorationSet = (
 				fill.style.setProperty('--cdp-page-fill-height', `${widget.fillerHeight}px`);
 
 				const gap = document.createElement('div');
-				gap.classList.add('cdp-page-gap');
+				gap.className = cn('cdp-page-gap', options.pageGapClass) ?? '';
 
 				const nextPageMargin = document.createElement('div');
 				nextPageMargin.classList.add('cdp-next-page-margin');
@@ -390,7 +366,6 @@ export const DocumentPagination = Extension.create<
 		};
 
 		return {
-			updatePageBreakBackground: (color: string) => update({ pageBreakBackground: color }),
 			updatePageSize: (size: PageSize) =>
 				update({
 					pageHeight: size.pageHeight,

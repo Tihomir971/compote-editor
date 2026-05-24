@@ -1,5 +1,3 @@
-import { getPageSize } from './utils';
-
 export interface PageSize {
 	pageHeight: number;
 	pageWidth: number;
@@ -8,6 +6,22 @@ export interface PageSize {
 	marginLeft: number;
 	marginRight: number;
 }
+
+const getPageSize = (
+	pageHeight: number,
+	pageWidth: number,
+	marginTop: number,
+	marginBottom: number,
+	marginLeft: number,
+	marginRight: number
+): PageSize => ({
+	pageHeight,
+	pageWidth,
+	marginTop,
+	marginBottom,
+	marginLeft,
+	marginRight
+});
 
 export const A4_PAGE_SIZE: PageSize = getPageSize(1123, 794, 95, 95, 76, 76);
 export const A3_PAGE_SIZE: PageSize = getPageSize(1591, 1123, 95, 95, 76, 76);

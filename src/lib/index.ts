@@ -10,6 +10,6 @@ export {
 	DocumentPagination,
 	type DocumentPaginationOptions
 } from './extensions/DocumentPagination.js';
-export { PAGE_SIZES } from './extensions/tiptap-pagination-plus/index.js';
+export { PAGE_SIZES } from './extensions/page-sizes.js';
 export { PageBreak } from './extensions/PageBreak.js';
-export type { PageSize } from './extensions/tiptap-pagination-plus/index.js';
+export type { PageSize } from './extensions/page-sizes.js';

@@ -4,7 +4,7 @@
 	import { Editor, type Extensions } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import TextAlign from '@tiptap/extension-text-align';
-	import { FontSize, TextStyle } from '@tiptap/extension-text-style';
+	import { FontSize, LineHeight, TextStyle } from '@tiptap/extension-text-style';
 	import Superscript from '@tiptap/extension-superscript';
 	import Subscript from '@tiptap/extension-subscript';
 	import { TableKit } from '@tiptap/extension-table';
@@ -32,6 +32,7 @@
 		TextAlign.configure({ types: ['heading', 'paragraph'] }),
 		TextStyle,
 		FontSize,
+		LineHeight,
 		Superscript,
 		Subscript,
 		TableKit.configure({ table: false }),

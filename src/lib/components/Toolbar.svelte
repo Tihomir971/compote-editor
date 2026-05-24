@@ -47,6 +47,7 @@
 		inTable && editorState.editor!.isActive('table', { borderless: true })
 	);
 	const hasFontSize = $derived(extensionNames.includes('fontSize'));
+	const hasLineHeight = $derived(extensionNames.includes('lineHeight'));
 	const hasBold = $derived(extensionNames.includes('bold'));
 	const hasItalic = $derived(extensionNames.includes('italic'));
 	const hasUnderline = $derived(extensionNames.includes('underline'));
@@ -99,6 +100,23 @@
 		h4: BASE_PT // 11pt
 	};
 
+	const LINE_HEIGHT_VALUES = [1.0, 1.4, 1.5, 1.6, 2.0];
+	const LINE_HEIGHT_ITEMS = LINE_HEIGHT_VALUES.map((n) => ({ value: String(n), label: String(n) }));
+	// Default line-height per block type (matches typography.css)
+	const BLOCK_DEFAULT_LINE_HEIGHT: Record<string, number> = {
+		paragraph: 1.6,
+		h1: 1.2,
+		h2: 1.3,
+		h3: 1.4,
+		h4: 1.0
+	};
+	function snapToLineHeightList(val: number): string {
+		const nearest = LINE_HEIGHT_VALUES.reduce((a, b) =>
+			Math.abs(b - val) < Math.abs(a - val) ? b : a
+		);
+		return String(nearest);
+	}
+
 	function snapToList(pt: number): string {
 		const nearest = FONT_SIZE_PTS.reduce((a, b) => (Math.abs(b - pt) < Math.abs(a - pt) ? b : a));
 		return nearest + 'pt';
@@ -114,6 +132,18 @@
 		});
 		const pt = block ? BLOCK_DEFAULT_PT[block] : BASE_PT;
 		return snapToList(pt);
+	});
+
+	const currentLineHeight = $derived.by(() => {
+		const editor = editorState.editor!;
+		const raw = editor.getAttributes('textStyle').lineHeight as string | undefined;
+		if (raw) return raw;
+		const block = Object.keys(BLOCK_DEFAULT_LINE_HEIGHT).find((type) => {
+			if (type.startsWith('h')) return editor.isActive('heading', { level: Number(type[1]) });
+			return editor.isActive(type);
+		});
+		const val = block ? BLOCK_DEFAULT_LINE_HEIGHT[block] : 1.6;
+		return snapToLineHeightList(val);
 	});
 
 	function ed() {
@@ -248,22 +278,38 @@
 		</ToggleGroup.Root>
 	{/if}
 
-	{#if hasFontSize}
+	{#if hasFontSize || hasLineHeight}
 		{#if hasHeading || hasLists || hasTextAlign || hasInlineFormatting}
 			<div class="h-5 w-px bg-border"></div>
 		{/if}
-		<div class="w-20">
-			<Select
-				items={FONT_SIZE_ITEMS}
-				value={currentFontSize}
-				size="sm"
-				placeholder="Size"
-				onValueChange={({ value }) => {
-					if (value[0]) ed().chain().focus().setFontSize(value[0]).run();
-					else ed().chain().focus().unsetFontSize().run();
-				}}
-			/>
-		</div>
+		{#if hasFontSize}
+			<div class="w-20">
+				<Select
+					items={FONT_SIZE_ITEMS}
+					value={currentFontSize}
+					size="sm"
+					placeholder="Size"
+					onValueChange={({ value }) => {
+						if (value[0]) ed().chain().focus().setFontSize(value[0]).run();
+						else ed().chain().focus().unsetFontSize().run();
+					}}
+				/>
+			</div>
+		{/if}
+		{#if hasLineHeight}
+			<div class="w-20">
+				<Select
+					items={LINE_HEIGHT_ITEMS}
+					value={currentLineHeight}
+					size="sm"
+					placeholder="Line"
+					onValueChange={({ value }) => {
+						if (value[0]) ed().chain().focus().setLineHeight(value[0]).run();
+						else ed().chain().focus().unsetLineHeight().run();
+					}}
+				/>
+			</div>
+		{/if}
 	{/if}
 
 	{#if hasTable}

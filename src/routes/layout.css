@@ -1,2 +1,8 @@
 @import 'compote-ui/theme.css';
 @import 'tailwindcss';
+
+@layer base {
+	* {
+		@apply border-surface-3;
+	}
+}

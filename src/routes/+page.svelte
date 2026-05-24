@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { DocumentEditor, printWithPagedJs, PageBreak } from '$lib';
 	import TextAlign from '@tiptap/extension-text-align';
+	import { FontSize, TextStyle } from '@tiptap/extension-text-style';
+	import Superscript from '@tiptap/extension-superscript';
+	import Subscript from '@tiptap/extension-subscript';
+	import { TableKit } from '@tiptap/extension-table';
 	import StarterKit from '@tiptap/starter-kit';
 
 	let html = $state(
@@ -19,7 +23,18 @@
 	</p>
 
 	<DocumentEditor
-		extensions={[StarterKit, TextAlign.configure({ types: ['heading', 'paragraph'] }), PageBreak]}
+		extensions={[
+			StarterKit,
+			TextAlign.configure({ types: ['heading', 'paragraph'] }),
+			TextStyle,
+			FontSize,
+			Superscript,
+			Subscript,
+			TableKit.configure({
+				table: { resizable: true }
+			}),
+			PageBreak
+		]}
 		bind:content={html}
 		format="A4"
 		onPrint={print}

@@ -8,6 +8,7 @@
 	import Superscript from '@tiptap/extension-superscript';
 	import Subscript from '@tiptap/extension-subscript';
 	import { TableKit } from '@tiptap/extension-table';
+	import { BorderlessTable } from '../extensions/BorderlessTable.js';
 	import Toolbar from './Toolbar.svelte';
 	import typographyCss from '../print/typography.css?raw';
 	import { DOCUMENT_FONT_FACE_CSS } from '../print/embedded-fonts.js';
@@ -33,9 +34,8 @@
 		FontSize,
 		Superscript,
 		Subscript,
-		TableKit.configure({
-			table: { resizable: true }
-		}),
+		TableKit.configure({ table: false }),
+		BorderlessTable.configure({ resizable: true }),
 		PageBreak
 	];
 

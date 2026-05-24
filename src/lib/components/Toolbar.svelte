@@ -43,6 +43,7 @@
 	const hasHorizontalRule = $derived(extensionNames.includes('horizontalRule'));
 	const hasTable = $derived(extensionNames.includes('table'));
 	const inTable = $derived(hasTable && editorState.editor!.isActive('table'));
+	const isTableBorderless = $derived(inTable && editorState.editor!.isActive('table', { borderless: true }));
 	const hasFontSize = $derived(extensionNames.includes('fontSize'));
 	const hasBold = $derived(extensionNames.includes('bold'));
 	const hasItalic = $derived(extensionNames.includes('italic'));
@@ -82,27 +83,35 @@
 		)
 	);
 
-	const FONT_SIZE_ITEMS = [
-		'8',
-		'9',
-		'10',
-		'11',
-		'12',
-		'14',
-		'16',
-		'18',
-		'20',
-		'24',
-		'28',
-		'32',
-		'36',
-		'48',
-		'72'
-	].map((s) => ({ value: s + 'pt', label: s }));
+	const FONT_SIZE_PTS = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72];
+	const FONT_SIZE_ITEMS = FONT_SIZE_PTS.map((n) => ({ value: n + 'pt', label: String(n) }));
+
+	// Base document font size (matches typography.css .document-content font-size)
+	const BASE_PT = 11;
+	// Effective pt size per block type when no explicit font-size is set (matches em multipliers in typography.css)
+	const BLOCK_DEFAULT_PT: Record<string, number> = {
+		paragraph: BASE_PT,
+		h1: BASE_PT * 2,       // 22pt
+		h2: BASE_PT * 1.5,     // 16.5pt
+		h3: BASE_PT * 1.25,    // 13.75pt
+		h4: BASE_PT,           // 11pt
+	};
+
+	function snapToList(pt: number): string {
+		const nearest = FONT_SIZE_PTS.reduce((a, b) => (Math.abs(b - pt) < Math.abs(a - pt) ? b : a));
+		return nearest + 'pt';
+	}
 
 	const currentFontSize = $derived.by(() => {
-		const raw = editorState.editor!.getAttributes('textStyle').fontSize as string | undefined;
-		return raw ?? null;
+		const editor = editorState.editor!;
+		const raw = editor.getAttributes('textStyle').fontSize as string | undefined;
+		if (raw) return raw;
+		const block = Object.keys(BLOCK_DEFAULT_PT).find((type) => {
+			if (type.startsWith('h')) return editor.isActive('heading', { level: Number(type[1]) });
+			return editor.isActive(type);
+		});
+		const pt = block ? BLOCK_DEFAULT_PT[block] : BASE_PT;
+		return snapToList(pt);
 	});
 
 	function ed() {
@@ -260,6 +269,7 @@
 		<Menu.Root
 			onSelect={({ value }: { value: string }) => {
 				const chain = ed().chain().focus();
+				if (value === 'toggle-borders') { ed().chain().focus().toggleTableBorderless().run(); return; }
 				if (value === 'insert') chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true });
 				else if (value === 'col-before') chain.addColumnBefore();
 				else if (value === 'col-after') chain.addColumnAfter();
@@ -293,6 +303,8 @@
 					<Menu.Separator />
 					<Menu.Item value="merge">Merge cells</Menu.Item>
 					<Menu.Item value="split">Split cell</Menu.Item>
+					<Menu.Separator />
+					<Menu.Item value="toggle-borders">{isTableBorderless ? 'Show borders' : 'Hide borders'}</Menu.Item>
 					<Menu.Separator />
 					<Menu.Item value="delete-table">Delete table</Menu.Item>
 				{/if}

@@ -263,7 +263,7 @@
 				chain.run();
 			}}
 		>
-			<Menu.Trigger variant="ghost" size="icon-sm"><PhTable /></Menu.Trigger>
+			<Menu.Trigger variant="ghost" size="icon"><PhTable class="size-6" /></Menu.Trigger>
 			<Menu.Content>
 				<Menu.Item value="insert">Insert table</Menu.Item>
 				{#if inTable}
@@ -294,22 +294,22 @@
 		<div class="h-5 w-px bg-border"></div>
 		{#if hasHorizontalRule}
 			<Button
-				size="icon-sm"
+				size="icon"
 				variant="ghost"
 				aria-label="Insert horizontal rule"
 				onclick={() => ed().chain().focus().setHorizontalRule().run()}
 			>
-				<PhMinus />
+				<PhMinus class="size-6" />
 			</Button>
 		{/if}
 		{#if hasPageBreak}
 			<Button
-				size="icon-sm"
+				size="icon"
 				variant="ghost"
 				aria-label="Insert page break"
 				onclick={() => ed().chain().focus().insertPageBreak().run()}
 			>
-				<PhScissors />
+				<PhScissors class="size-6" />
 			</Button>
 		{/if}
 	{/if}

@@ -3,7 +3,7 @@
 	import { cn, ScrollArea } from 'compote-ui';
 	import { Editor, type Extensions } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
-	import Toolbar from '../Toolbar.svelte';
+	import Toolbar from './Toolbar.svelte';
 	import typographyCss from '../print/typography.css?raw';
 	import { DOCUMENT_FONT_FACE_CSS } from '../print/embedded-fonts.js';
 	import { type PageFormatKey } from '../print/page-formats.js';
@@ -96,7 +96,7 @@
 
 <div
 	class={cn(
-		'compote-document-editor flex min-h-0 flex-col rounded-md border border-border bg-surface-1 h-[min(80vh,900px)]',
+		'flex min-h-0 flex-col rounded-md border border-border bg-surface-1 h-[min(80vh,900px)]',
 		className
 	) ?? ''}
 >

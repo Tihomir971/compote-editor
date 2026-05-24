@@ -1,6 +1,6 @@
 import { buildPagedJsHtml } from './build-printable-html.js';
 import type { PageFormatKey } from './page-formats.js';
-import pagedJsContent from 'virtual:pagedjs-polyfill';
+import pagedJsContent from './paged.polyfill.txt?raw';
 
 export interface PrintWithPagedJsOptions {
 	content: string;

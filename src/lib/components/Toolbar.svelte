@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { Button, Menu, Select, ToggleGroup } from 'compote-ui';
 	import type { Editor } from '@tiptap/core';
+	import { SvelteMap } from 'svelte/reactivity';
+	import type { TemplateVariableDefinition } from '../template-variables.js';
 	import PhArrowCounterClockwise from '~icons/ph/arrow-counter-clockwise';
 	import PhArrowClockwise from '~icons/ph/arrow-clockwise';
+	import PhBracketsCurly from '~icons/ph/brackets-curly';
 	import PhTextB from '~icons/ph/text-b';
 	import PhTextItalic from '~icons/ph/text-italic';
 	import PhTextUnderline from '~icons/ph/text-underline';
@@ -28,12 +31,14 @@
 		editorState,
 		onSave,
 		isSaving = false,
-		onPrint
+		onPrint,
+		templateVariables = []
 	}: {
 		editorState: { editor: Editor | null };
 		onSave?: () => void | Promise<void>;
 		isSaving?: boolean;
 		onPrint?: () => void;
+		templateVariables?: TemplateVariableDefinition[];
 	} = $props();
 
 	const extensionNames = $derived(
@@ -48,6 +53,7 @@
 	);
 	const hasFontSize = $derived(extensionNames.includes('fontSize'));
 	const hasLineHeight = $derived(extensionNames.includes('lineHeight'));
+	const hasTemplateVariable = $derived(extensionNames.includes('templateVariable'));
 	const hasBold = $derived(extensionNames.includes('bold'));
 	const hasItalic = $derived(extensionNames.includes('italic'));
 	const hasUnderline = $derived(extensionNames.includes('underline'));
@@ -102,6 +108,16 @@
 
 	const LINE_HEIGHT_VALUES = [1.0, 1.4, 1.5, 1.6, 2.0];
 	const LINE_HEIGHT_ITEMS = LINE_HEIGHT_VALUES.map((n) => ({ value: String(n), label: String(n) }));
+	const groupedTemplateVariables = $derived.by(() => {
+		const groups = new SvelteMap<string, TemplateVariableDefinition[]>();
+
+		for (const variable of templateVariables) {
+			const group = variable.group ?? 'Fields';
+			groups.set(group, [...(groups.get(group) ?? []), variable]);
+		}
+
+		return [...groups.entries()];
+	});
 	// Default line-height per block type (matches typography.css)
 	const BLOCK_DEFAULT_LINE_HEIGHT: Record<string, number> = {
 		paragraph: 1.6,
@@ -148,6 +164,13 @@
 
 	function ed() {
 		return editorState.editor!;
+	}
+
+	function insertTemplateVariable(id: string) {
+		const variable = templateVariables.find((item) => item.id === id);
+		if (!variable) return;
+
+		ed().chain().focus().insertTemplateVariable({ id: variable.id, label: variable.label }).run();
 	}
 </script>
 
@@ -361,6 +384,28 @@
 					<Menu.Separator />
 					<Menu.Item value="delete-table">Delete table</Menu.Item>
 				{/if}
+			</Menu.Content>
+		</Menu.Root>
+	{/if}
+
+	{#if hasTemplateVariable && templateVariables.length > 0}
+		<div class="h-5 w-px bg-border"></div>
+		<Menu.Root onSelect={({ value }: { value: string }) => insertTemplateVariable(value)}>
+			<Menu.Trigger variant="ghost" size="icon">
+				<PhBracketsCurly class="size-6" />
+			</Menu.Trigger>
+			<Menu.Content>
+				{#each groupedTemplateVariables as [group, variables], groupIndex (group)}
+					{#if groupIndex > 0}
+						<Menu.Separator />
+					{/if}
+					<Menu.ItemGroup>
+						<Menu.ItemGroupLabel>{group}</Menu.ItemGroupLabel>
+						{#each variables as variable (variable.id)}
+							<Menu.Item value={variable.id}>{variable.label}</Menu.Item>
+						{/each}
+					</Menu.ItemGroup>
+				{/each}
 			</Menu.Content>
 		</Menu.Root>
 	{/if}

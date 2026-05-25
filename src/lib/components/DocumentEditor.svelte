@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
 	import { cn, ScrollArea } from 'compote-ui';
-	import { Editor, type Extensions } from '@tiptap/core';
+	import { Editor, type Extensions, type JSONContent } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import TextAlign from '@tiptap/extension-text-align';
 	import { FontSize, LineHeight, TextStyle } from '@tiptap/extension-text-style';
@@ -15,6 +15,8 @@
 	import { type PageFormatKey } from '../print/page-formats.js';
 	import { printWithPagedJs } from '../print/print-with-pagedjs.js';
 	import { PageBreak } from '../extensions/PageBreak.js';
+	import { TemplateVariable } from '../extensions/TemplateVariable.js';
+	import type { TemplateVariableDefinition } from '../template-variables.js';
 	import {
 		DocumentPagination,
 		type DocumentPaginationOptions
@@ -37,28 +39,64 @@
 		Subscript,
 		TableKit.configure({ table: false }),
 		BorderlessTable.configure({ resizable: true }),
-		PageBreak
+		PageBreak,
+		TemplateVariable
 	];
 
-	interface Props {
+	type DocumentEditorContent = string | JSONContent;
+	type DocumentEditorMode = 'editor' | 'template' | 'readonly';
+	type DocumentEditorContentFormat = 'html' | 'json';
+
+	type DocumentEditorUpdateHandler = (content: DocumentEditorContent) => void;
+	type DocumentEditorSaveHandler = (payload: {
+		content: DocumentEditorContent;
+		html: string;
+		json: JSONContent;
+		editor: Editor;
+	}) => void | Promise<void>;
+
+	interface CommonProps {
 		extensions?: Extensions;
-		content?: string;
 		format?: PageFormatKey;
 		pagination?: Partial<DocumentPaginationOptions>;
 		pageAreaClass?: string;
 		class?: string;
-		onUpdate?: (html: string) => void;
-		onSave?: (payload: { content: string; editor: Editor }) => void | Promise<void>;
+		templateVariables?: TemplateVariableDefinition[];
+		onUpdate?: DocumentEditorUpdateHandler;
+		onSave?: DocumentEditorSaveHandler;
 		onPrint?: () => void;
 	}
+
+	type HtmlEditorProps = CommonProps & {
+		mode?: Exclude<DocumentEditorMode, 'template'>;
+		contentFormat?: 'html';
+		content?: string;
+	};
+
+	type TemplateEditorProps = CommonProps & {
+		mode: 'template';
+		contentFormat?: 'json';
+		content?: JSONContent;
+	};
+
+	type JsonReadonlyEditorProps = CommonProps & {
+		mode: 'readonly';
+		contentFormat: 'json';
+		content?: JSONContent;
+	};
+
+	type Props = HtmlEditorProps | TemplateEditorProps | JsonReadonlyEditorProps;
 
 	let {
 		extensions = [],
 		content = $bindable(''),
+		mode = 'editor',
+		contentFormat,
 		format = 'A4',
 		pagination = {},
 		pageAreaClass = 'bg-surface-2',
 		class: className = '',
+		templateVariables = [],
 		onUpdate,
 		onSave,
 		onPrint
@@ -67,6 +105,10 @@
 	let editorEl = $state<HTMLElement | null>(null);
 	let editorState = $state<{ editor: Editor | null }>({ editor: null });
 	let isSaving = $state(false);
+	let resolvedContentFormat = $derived<DocumentEditorContentFormat>(
+		contentFormat ?? (mode === 'template' ? 'json' : 'html')
+	);
+	let activeTemplateVariables = $derived(mode === 'readonly' ? [] : templateVariables);
 
 	const STYLE_ID = 'compote-document-css';
 
@@ -107,11 +149,14 @@
 			editorProps: {
 				attributes: { class: 'document-content' }
 			},
+			editable: mode !== 'readonly',
 			onTransaction: ({ editor }) => {
 				editorState = { editor };
 				const html = editor.getHTML();
-				content = html;
-				onUpdate?.(html);
+				const json = editor.getJSON();
+				const nextContent = resolvedContentFormat === 'json' ? json : html;
+				content = nextContent;
+				onUpdate?.(nextContent);
 			}
 		});
 
@@ -134,7 +179,9 @@
 			return;
 		}
 
-		printWithPagedJs({ content, format });
+		const printContent =
+			editorState.editor?.getHTML() ?? (typeof content === 'string' ? content : '');
+		printWithPagedJs({ content: printContent, format });
 	}
 
 	async function handleSave() {
@@ -144,7 +191,12 @@
 
 		isSaving = true;
 		try {
-			await onSave({ content, editor });
+			await onSave({
+				content,
+				html: editor.getHTML(),
+				json: editor.getJSON(),
+				editor
+			});
 		} finally {
 			isSaving = false;
 		}
@@ -174,6 +226,7 @@
 			onSave={onSave ? handleSave : undefined}
 			{isSaving}
 			onPrint={handlePrint}
+			templateVariables={activeTemplateVariables}
 		/>
 	{/if}
 	<ScrollArea.Root class="min-h-0 flex-1">
@@ -203,5 +256,28 @@
 		color: #aaa;
 		pointer-events: none;
 		height: 0;
+	}
+
+	:global(.document-content .template-variable) {
+		display: inline-flex;
+		max-width: 100%;
+		align-items: baseline;
+		border: 1px solid color-mix(in oklab, currentColor 24%, transparent);
+		border-radius: 4px;
+		background: color-mix(in oklab, currentColor 8%, transparent);
+		padding: 0 0.35em;
+		font: inherit;
+		line-height: 1.55;
+		white-space: nowrap;
+	}
+
+	:global(.document-content .template-variable::before) {
+		content: '[';
+		opacity: 0.65;
+	}
+
+	:global(.document-content .template-variable::after) {
+		content: ']';
+		opacity: 0.65;
 	}
 </style>

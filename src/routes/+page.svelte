@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { DocumentEditor } from '$lib';
+	import type { JSONContent } from '@tiptap/core';
+	import type { TemplateVariableDefinition } from '$lib';
 
 	let html = $state(
 		`<h1>Hello compote-editor!</h1>
@@ -21,6 +23,51 @@
 	function save() {
 		console.info('Saved document HTML', html);
 	}
+
+	const templateVariables: TemplateVariableDefinition[] = [
+		{ id: 'customer.name', label: 'Customer Name', group: 'Customer' },
+		{ id: 'customer.pib', label: 'Customer PIB', group: 'Customer' },
+		{ id: 'document.date', label: 'Document Date', group: 'Document' }
+	];
+
+	let templateJson = $state<JSONContent>({
+		type: 'doc',
+		content: [
+			{
+				type: 'heading',
+				attrs: { textAlign: null, level: 1 },
+				content: [{ type: 'text', text: 'Template example' }]
+			},
+			{
+				type: 'paragraph',
+				attrs: { textAlign: null },
+				content: [
+					{ type: 'text', text: 'Dear ' },
+					{
+						type: 'templateVariable',
+						attrs: { id: 'customer.name', label: 'Customer Name' }
+					},
+					{ type: 'text', text: ',' }
+				]
+			},
+			{
+				type: 'paragraph',
+				attrs: { textAlign: null },
+				content: [
+					{ type: 'text', text: 'Your PIB is ' },
+					{
+						type: 'templateVariable',
+						attrs: { id: 'customer.pib', label: 'Customer PIB' }
+					},
+					{ type: 'text', text: '.' }
+				]
+			}
+		]
+	});
+
+	function saveTemplate() {
+		console.info('Saved template JSON', templateJson);
+	}
 </script>
 
 <div class="mx-auto max-w-7xl p-8">
@@ -35,5 +82,28 @@
 	<details class="mt-6">
 		<summary class="cursor-pointer text-sm font-medium text-ink-dim">HTML output</summary>
 		<pre class="mt-2 overflow-auto rounded-md bg-surface-2 p-3 text-xs">{html}</pre>
+	</details>
+
+	<h2 class="mb-2 mt-10 text-xl font-bold">Template mode</h2>
+	<p class="mb-6 text-sm text-ink-dim">
+		Template variables are stored as JSON nodes and rendered as placeholders in the editor.
+	</p>
+
+	<DocumentEditor
+		mode="template"
+		contentFormat="json"
+		bind:content={templateJson}
+		{templateVariables}
+		format="A4"
+		onSave={saveTemplate}
+	/>
+
+	<details class="mt-6">
+		<summary class="cursor-pointer text-sm font-medium text-ink-dim">Template JSON output</summary>
+		<pre class="mt-2 overflow-auto rounded-md bg-surface-2 p-3 text-xs">{JSON.stringify(
+				templateJson,
+				null,
+				2
+			)}</pre>
 	</details>
 </div>

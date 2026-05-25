@@ -48,6 +48,7 @@
 		"pagedjs": "^0.4.3"
 	},
 	"devDependencies": {
+		"compote-ui": "^0.48.1",
 		"@eslint/compat": "^2.0.4",
 		"@eslint/js": "^10.0.1",
 		"@iconify-json/ph": "^1.2.2",

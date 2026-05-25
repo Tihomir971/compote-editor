@@ -319,6 +319,7 @@ export const DocumentPagination = Extension.create<
 
 				view: (view) => {
 					let queued = false;
+					let destroyed = false;
 
 					const requestMeasure = () => {
 						if (queued) {
@@ -327,6 +328,10 @@ export const DocumentPagination = Extension.create<
 						queued = true;
 						requestAnimationFrame(() => {
 							queued = false;
+							if (destroyed) {
+								return;
+							}
+
 							const pluginState = paginationKey.getState(view.state);
 							if (!pluginState || pluginState.measured) {
 								return;
@@ -340,7 +345,28 @@ export const DocumentPagination = Extension.create<
 						});
 					};
 
+					const requestRemeasure = () => {
+						if (destroyed) {
+							return;
+						}
+
+						const pluginState = paginationKey.getState(view.state);
+						if (pluginState?.measured) {
+							view.dispatch(view.state.tr.setMeta(remeasureMetaKey, true));
+						}
+
+						requestMeasure();
+					};
+
+					const requestSettledLayoutMeasure = () => {
+						requestAnimationFrame(() => {
+							requestAnimationFrame(requestRemeasure);
+						});
+					};
+
 					requestMeasure();
+					requestSettledLayoutMeasure();
+					document.fonts?.ready.then(requestRemeasure);
 
 					return {
 						update: () => {
@@ -349,7 +375,9 @@ export const DocumentPagination = Extension.create<
 								requestMeasure();
 							}
 						},
-						destroy: () => {}
+						destroy: () => {
+							destroyed = true;
+						}
 					};
 				}
 			})

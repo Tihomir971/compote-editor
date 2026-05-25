@@ -24,7 +24,7 @@ bun add svelte@^5
 	let html = $state('');
 </script>
 
-<DocumentEditor bind:content={html} format="A4" />
+<DocumentEditor bind:content={html} page={{ format: 'A4' }} />
 ```
 
 ### Template editing with JSON content
@@ -37,7 +37,7 @@ TipTap JSON, not HTML, so template variables remain structured nodes.
 	import { DocumentEditor, type TemplateVariableDefinition } from 'compote-editor';
 	import type { JSONContent } from '@tiptap/core';
 
-	const templateVariables: TemplateVariableDefinition[] = [
+	const templateFields: TemplateVariableDefinition[] = [
 		{ id: 'customer.name', label: 'Customer Name', group: 'Customer' },
 		{ id: 'customer.pib', label: 'Customer PIB', group: 'Customer' }
 	];
@@ -63,25 +63,24 @@ TipTap JSON, not HTML, so template variables remain structured nodes.
 	mode="template"
 	contentFormat="json"
 	bind:content={templateJson}
-	{templateVariables}
+	template={{ fields: templateFields }}
 />
 ```
 
 ## `DocumentEditor` props
 
-| Prop                | Type                                        | Default        | Description                                          |
-| ------------------- | ------------------------------------------- | -------------- | ---------------------------------------------------- |
-| `mode`              | `'editor' \| 'template' \| 'readonly'`      | `'editor'`     | Editor behavior mode                                 |
-| `contentFormat`     | `'html' \| 'json'`                          | mode-based     | Serialization format for `content` updates           |
-| `extensions`        | `Extensions`                                | `[]`           | Extra TipTap extensions to load or override defaults |
-| `content`           | `string \| JSONContent` (bindable)          | `''`           | HTML or TipTap JSON content                          |
-| `templateVariables` | `TemplateVariableDefinition[]`              | `[]`           | Variables shown in the toolbar insert menu           |
-| `format`            | `'A4' \| 'Letter'`                          | `'A4'`         | Page size                                            |
-| `pagination`        | `Partial<DocumentPaginationOptions>`        | `{}`           | Override live pagination config                      |
-| `class`             | `string`                                    | `''`           | Extra CSS classes on outer wrapper                   |
-| `onUpdate`          | `(content: string \| JSONContent) => void`  | —              | Called on every edit                                 |
-| `onSave`            | `({ content, html, json, editor }) => void` | —              | Shows the save toolbar button and wires Ctrl/Cmd+S   |
-| `onPrint`           | `() => void`                                | built-in print | Override the print toolbar button                    |
+| Prop            | Type                                        | Default        | Description                                          |
+| --------------- | ------------------------------------------- | -------------- | ---------------------------------------------------- |
+| `mode`          | `'editor' \| 'template' \| 'readonly'`      | `'editor'`     | Editor behavior mode                                 |
+| `contentFormat` | `'html' \| 'json'`                          | mode-based     | Serialization format for `content` updates           |
+| `content`       | `string \| JSONContent` (bindable)          | `''`           | HTML or TipTap JSON content                          |
+| `page`          | `DocumentEditorPageOptions`                 | `{}`           | Page format and pagination settings                  |
+| `classes`       | `DocumentEditorClasses`                     | `{}`           | Class slots for wrapper and page area                |
+| `template`      | `DocumentEditorTemplateOptions`             | `{}`           | Template fields and future template primitives       |
+| `extensions`    | `Extensions`                                | `[]`           | Extra TipTap extensions to load or override defaults |
+| `onUpdate`      | `({ content, html, json, editor }) => void` | —              | Called on every edit                                 |
+| `onSave`        | `({ content, html, json, editor }) => void` | —              | Shows the save toolbar button and wires Ctrl/Cmd+S   |
+| `onPrint`       | `() => void`                                | built-in print | Override the print toolbar button                    |
 
 The prop types intentionally prevent invalid combinations such as
 `mode="template" contentFormat="html"`. Template mode uses JSON content. HTML content remains the
@@ -97,7 +96,9 @@ Valid combinations:
 ```
 
 `bind:content` gives the serialized content on every keystroke in the selected format. Use
-`onUpdate` instead if you only want to react and do not need two-way binding.
+`onUpdate` instead if you only want to react and do not need two-way binding. `onUpdate` receives
+the same payload shape as `onSave`: `content` in the configured format, plus `html`, `json`, and
+the TipTap `editor`.
 
 ## Saving
 
@@ -123,6 +124,7 @@ For templates, save `json` as the source of truth:
 	mode="template"
 	contentFormat="json"
 	bind:content={templateJson}
+	template={{ fields: templateFields }}
 	onSave={async ({ json }) => {
 		await saveTemplate(json);
 	}}
@@ -214,10 +216,21 @@ Template JSON → app serializes variables/blocks to Liquid → LiquidJS + data 
 Define the available insert menu fields in the consumer app:
 
 ```ts
-const templateVariables: TemplateVariableDefinition[] = [
+const templateFields: TemplateVariableDefinition[] = [
 	{ id: 'customer.name', label: 'Customer Name', group: 'Customer' },
 	{ id: 'customer.pib', label: 'Customer PIB', group: 'Customer' }
 ];
+```
+
+Pass them through the `template` prop:
+
+```svelte
+<DocumentEditor
+	mode="template"
+	contentFormat="json"
+	bind:content={templateJson}
+	template={{ fields: templateFields }}
+/>
 ```
 
 Map IDs to Liquid in the consumer app, not in `compote-editor`:
@@ -285,12 +298,14 @@ Pass `extensions` only when adding custom extensions or overriding one of the de
 <DocumentEditor
 	{extensions}
 	bind:content={html}
-	format="A4"
-	pagination={{
-		headerLeft: 'My Document',
-		headerRight: 'Page {page}',
-		footerRight: 'Page {page} of {total}',
-		pageGap: 30
+	page={{
+		format: 'A4',
+		pagination: {
+			headerLeft: 'My Document',
+			headerRight: 'Page {page}',
+			footerRight: 'Page {page} of {total}',
+			pageGap: 30
+		}
 	}}
 />
 ```

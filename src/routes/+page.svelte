@@ -24,7 +24,7 @@
 		console.info('Saved document HTML', html);
 	}
 
-	const templateVariables: TemplateVariableDefinition[] = [
+	const templateFields: TemplateVariableDefinition[] = [
 		{ id: 'customer.name', label: 'Customer Name', group: 'Customer' },
 		{ id: 'customer.pib', label: 'Customer PIB', group: 'Customer' },
 		{ id: 'document.date', label: 'Document Date', group: 'Document' }
@@ -77,7 +77,7 @@
 		<code>extensions</code> prop to customize.
 	</p>
 
-	<DocumentEditor bind:content={html} format="A4" onSave={save} />
+	<DocumentEditor bind:content={html} page={{ format: 'A4' }} onSave={save} />
 
 	<details class="mt-6">
 		<summary class="cursor-pointer text-sm font-medium text-ink-dim">HTML output</summary>
@@ -93,8 +93,8 @@
 		mode="template"
 		contentFormat="json"
 		bind:content={templateJson}
-		{templateVariables}
-		format="A4"
+		template={{ fields: templateFields }}
+		page={{ format: 'A4' }}
 		onSave={saveTemplate}
 	/>
 

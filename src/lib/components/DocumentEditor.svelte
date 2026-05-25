@@ -16,13 +16,14 @@
 	import { printWithPagedJs } from '../print/print-with-pagedjs.js';
 	import { PageBreak } from '../extensions/PageBreak.js';
 	import { TemplateVariable } from '../extensions/TemplateVariable.js';
-	import type { TemplateVariableDefinition } from '../template-variables.js';
-	import {
-		DocumentPagination,
-		type DocumentPaginationOptions
-	} from '../extensions/DocumentPagination.js';
+	import { DocumentPagination } from '../extensions/DocumentPagination.js';
 	import { PAGE_SIZES, type PageSize } from '../extensions/page-sizes.js';
 	import { SvelteMap } from 'svelte/reactivity';
+	import type {
+		DocumentEditorCommonProps,
+		DocumentEditorContentFormat,
+		DocumentEditorMode
+	} from '../document-editor-options.js';
 
 	const FORMAT_TO_PAGE_SIZE: Record<PageFormatKey, PageSize> = {
 		A4: PAGE_SIZES.A4,
@@ -43,43 +44,19 @@
 		TemplateVariable
 	];
 
-	type DocumentEditorContent = string | JSONContent;
-	type DocumentEditorMode = 'editor' | 'template' | 'readonly';
-	type DocumentEditorContentFormat = 'html' | 'json';
-
-	type DocumentEditorUpdateHandler = (content: DocumentEditorContent) => void;
-	type DocumentEditorSaveHandler = (payload: {
-		content: DocumentEditorContent;
-		html: string;
-		json: JSONContent;
-		editor: Editor;
-	}) => void | Promise<void>;
-
-	interface CommonProps {
-		extensions?: Extensions;
-		format?: PageFormatKey;
-		pagination?: Partial<DocumentPaginationOptions>;
-		pageAreaClass?: string;
-		class?: string;
-		templateVariables?: TemplateVariableDefinition[];
-		onUpdate?: DocumentEditorUpdateHandler;
-		onSave?: DocumentEditorSaveHandler;
-		onPrint?: () => void;
-	}
-
-	type HtmlEditorProps = CommonProps & {
+	type HtmlEditorProps = DocumentEditorCommonProps & {
 		mode?: Exclude<DocumentEditorMode, 'template'>;
 		contentFormat?: 'html';
 		content?: string;
 	};
 
-	type TemplateEditorProps = CommonProps & {
+	type TemplateEditorProps = DocumentEditorCommonProps & {
 		mode: 'template';
 		contentFormat?: 'json';
 		content?: JSONContent;
 	};
 
-	type JsonReadonlyEditorProps = CommonProps & {
+	type JsonReadonlyEditorProps = DocumentEditorCommonProps & {
 		mode: 'readonly';
 		contentFormat: 'json';
 		content?: JSONContent;
@@ -92,11 +69,9 @@
 		content = $bindable(''),
 		mode = 'editor',
 		contentFormat,
-		format = 'A4',
-		pagination = {},
-		pageAreaClass = 'bg-surface-2',
-		class: className = '',
-		templateVariables = [],
+		page = {},
+		classes = {},
+		template = {},
 		onUpdate,
 		onSave,
 		onPrint
@@ -108,7 +83,6 @@
 	let resolvedContentFormat = $derived<DocumentEditorContentFormat>(
 		contentFormat ?? (mode === 'template' ? 'json' : 'html')
 	);
-	let activeTemplateVariables = $derived(mode === 'readonly' ? [] : templateVariables);
 
 	const STYLE_ID = 'compote-document-css';
 
@@ -132,16 +106,16 @@
 			document.head.appendChild(style);
 		}
 
-		const pageSize = FORMAT_TO_PAGE_SIZE[format] ?? PAGE_SIZES.A4;
+		const pageSize = FORMAT_TO_PAGE_SIZE[page.format ?? 'A4'] ?? PAGE_SIZES.A4;
 
 		const e = new Editor({
 			element: editorEl!,
 			extensions: [
 				...resolveExtensions(extensions),
 				DocumentPagination.configure({
-					pageGapClass: pageAreaClass,
+					pageGapClass: classes.pageArea ?? 'bg-surface-2',
 					pageGap: 20,
-					...pagination,
+					...(page.pagination ?? {}),
 					...pageSize
 				})
 			],
@@ -156,7 +130,7 @@
 				const json = editor.getJSON();
 				const nextContent = resolvedContentFormat === 'json' ? json : html;
 				content = nextContent;
-				onUpdate?.(nextContent);
+				onUpdate?.({ content: nextContent, html, json, editor });
 			}
 		});
 
@@ -164,7 +138,7 @@
 	});
 
 	$effect(() => {
-		const currentFormat = format;
+		const currentFormat = page.format ?? 'A4';
 		untrack(() => {
 			const editor = editorState.editor;
 			if (editor) {
@@ -181,7 +155,7 @@
 
 		const printContent =
 			editorState.editor?.getHTML() ?? (typeof content === 'string' ? content : '');
-		printWithPagedJs({ content: printContent, format });
+		printWithPagedJs({ content: printContent, format: page.format ?? 'A4' });
 	}
 
 	async function handleSave() {
@@ -217,7 +191,7 @@
 <div
 	class={cn(
 		'flex min-h-0 flex-col rounded-md border border-border bg-surface-1 h-[min(80vh,900px)]',
-		className
+		classes.root
 	) ?? ''}
 >
 	{#if editorState.editor}
@@ -226,13 +200,13 @@
 			onSave={onSave ? handleSave : undefined}
 			{isSaving}
 			onPrint={handlePrint}
-			templateVariables={activeTemplateVariables}
+			templateFields={mode === 'readonly' ? [] : (template.fields ?? [])}
 		/>
 	{/if}
 	<ScrollArea.Root class="min-h-0 flex-1">
 		<ScrollArea.Viewport>
 			<ScrollArea.Content class="min-h-full p-0">
-				<div class={cn('min-h-full p-6', pageAreaClass) ?? ''}>
+				<div class={cn('min-h-full p-6', classes.pageArea ?? 'bg-surface-2') ?? ''}>
 					<div class="flex min-w-max justify-center">
 						<div bind:this={editorEl}></div>
 					</div>

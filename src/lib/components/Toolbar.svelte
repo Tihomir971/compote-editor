@@ -32,13 +32,13 @@
 		onSave,
 		isSaving = false,
 		onPrint,
-		templateVariables = []
+		templateFields = []
 	}: {
 		editorState: { editor: Editor | null };
 		onSave?: () => void | Promise<void>;
 		isSaving?: boolean;
 		onPrint?: () => void;
-		templateVariables?: TemplateVariableDefinition[];
+		templateFields?: TemplateVariableDefinition[];
 	} = $props();
 
 	const extensionNames = $derived(
@@ -108,12 +108,12 @@
 
 	const LINE_HEIGHT_VALUES = [1.0, 1.4, 1.5, 1.6, 2.0];
 	const LINE_HEIGHT_ITEMS = LINE_HEIGHT_VALUES.map((n) => ({ value: String(n), label: String(n) }));
-	const groupedTemplateVariables = $derived.by(() => {
+	const groupedTemplateFields = $derived.by(() => {
 		const groups = new SvelteMap<string, TemplateVariableDefinition[]>();
 
-		for (const variable of templateVariables) {
-			const group = variable.group ?? 'Fields';
-			groups.set(group, [...(groups.get(group) ?? []), variable]);
+		for (const field of templateFields) {
+			const group = field.group ?? 'Fields';
+			groups.set(group, [...(groups.get(group) ?? []), field]);
 		}
 
 		return [...groups.entries()];
@@ -167,7 +167,7 @@
 	}
 
 	function insertTemplateVariable(id: string) {
-		const variable = templateVariables.find((item) => item.id === id);
+		const variable = templateFields.find((item) => item.id === id);
 		if (!variable) return;
 
 		ed().chain().focus().insertTemplateVariable({ id: variable.id, label: variable.label }).run();
@@ -388,21 +388,21 @@
 		</Menu.Root>
 	{/if}
 
-	{#if hasTemplateVariable && templateVariables.length > 0}
+	{#if hasTemplateVariable && templateFields.length > 0}
 		<div class="h-5 w-px bg-border"></div>
 		<Menu.Root onSelect={({ value }: { value: string }) => insertTemplateVariable(value)}>
 			<Menu.Trigger variant="ghost" size="icon">
 				<PhBracketsCurly class="size-6" />
 			</Menu.Trigger>
 			<Menu.Content>
-				{#each groupedTemplateVariables as [group, variables], groupIndex (group)}
+				{#each groupedTemplateFields as [group, fields], groupIndex (group)}
 					{#if groupIndex > 0}
 						<Menu.Separator />
 					{/if}
 					<Menu.ItemGroup>
 						<Menu.ItemGroupLabel>{group}</Menu.ItemGroupLabel>
-						{#each variables as variable (variable.id)}
-							<Menu.Item value={variable.id}>{variable.label}</Menu.Item>
+						{#each fields as field (field.id)}
+							<Menu.Item value={field.id}>{field.label}</Menu.Item>
 						{/each}
 					</Menu.ItemGroup>
 				{/each}

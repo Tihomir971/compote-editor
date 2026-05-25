@@ -1,6 +1,6 @@
 {
 	"name": "compote-editor",
-	"version": "0.3.2",
+	"version": "0.4.0",
 	"scripts": {
 		"dev": "vite dev --open",
 		"build": "bun run sync:pagedjs-polyfill && vite build && npm run prepack",

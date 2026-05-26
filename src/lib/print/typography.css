@@ -40,6 +40,10 @@
 	margin: 0 0 0.75em;
 }
 
+.document-content p:empty::before {
+	content: '\00a0';
+}
+
 .document-content p:last-child {
 	margin-bottom: 0;
 }

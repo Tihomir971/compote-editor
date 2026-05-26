@@ -106,7 +106,7 @@
 		h4: BASE_PT // 11pt
 	};
 
-	const LINE_HEIGHT_VALUES = [1.0, 1.4, 1.5, 1.6, 2.0];
+	const LINE_HEIGHT_VALUES = [1.0, 1.2, 1.3, 1.4, 1.5, 1.6, 2.0];
 	const LINE_HEIGHT_ITEMS = LINE_HEIGHT_VALUES.map((n) => ({ value: String(n), label: String(n) }));
 	const groupedTemplateFields = $derived.by(() => {
 		const groups = new SvelteMap<string, TemplateVariableDefinition[]>();
@@ -124,7 +124,7 @@
 		h1: 1.2,
 		h2: 1.3,
 		h3: 1.4,
-		h4: 1.0
+		h4: 1.6
 	};
 	function snapToLineHeightList(val: number): string {
 		const nearest = LINE_HEIGHT_VALUES.reduce((a, b) =>
@@ -152,12 +152,16 @@
 
 	const currentLineHeight = $derived.by(() => {
 		const editor = editorState.editor!;
-		const raw = editor.getAttributes('textStyle').lineHeight as string | undefined;
-		if (raw) return raw;
 		const block = Object.keys(BLOCK_DEFAULT_LINE_HEIGHT).find((type) => {
 			if (type.startsWith('h')) return editor.isActive('heading', { level: Number(type[1]) });
 			return editor.isActive(type);
 		});
+		const raw = block
+			? ((block.startsWith('h')
+					? editor.getAttributes('heading').lineHeight
+					: editor.getAttributes(block).lineHeight) as string | undefined)
+			: undefined;
+		if (raw) return raw;
 		const val = block ? BLOCK_DEFAULT_LINE_HEIGHT[block] : 1.6;
 		return snapToLineHeightList(val);
 	});

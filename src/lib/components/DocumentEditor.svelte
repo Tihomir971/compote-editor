@@ -4,7 +4,7 @@
 	import { Editor, type Extensions, type JSONContent } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import TextAlign from '@tiptap/extension-text-align';
-	import { FontSize, LineHeight, TextStyle } from '@tiptap/extension-text-style';
+	import { FontSize, TextStyle } from '@tiptap/extension-text-style';
 	import Superscript from '@tiptap/extension-superscript';
 	import Subscript from '@tiptap/extension-subscript';
 	import { TableKit } from '@tiptap/extension-table';
@@ -17,6 +17,7 @@
 	import { PageBreak } from '../extensions/PageBreak.js';
 	import { TemplateVariable } from '../extensions/TemplateVariable.js';
 	import { DocumentPagination } from '../extensions/DocumentPagination.js';
+	import { BlockLineHeight } from '../extensions/BlockLineHeight.js';
 	import { PAGE_SIZES, type PageSize } from '../extensions/page-sizes.js';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type {
@@ -35,7 +36,7 @@
 		TextAlign.configure({ types: ['heading', 'paragraph'] }),
 		TextStyle,
 		FontSize,
-		LineHeight,
+		BlockLineHeight,
 		Superscript,
 		Subscript,
 		TableKit.configure({ table: false }),

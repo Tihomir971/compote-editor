@@ -44,6 +44,10 @@
 	content: '\00a0';
 }
 
+.document-content p:empty {
+	min-height: 1.6em;
+}
+
 .document-content p:last-child {
 	margin-bottom: 0;
 }

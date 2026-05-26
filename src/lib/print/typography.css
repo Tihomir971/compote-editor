@@ -139,7 +139,6 @@
 /* Tables */
 
 .document-content .tableWrapper {
-	margin: 0 0 0.75em;
 	overflow-x: auto;
 }
 
@@ -151,7 +150,7 @@
 	table-layout: fixed;
 	overflow: hidden;
 	font-size: 1em;
-	margin: 0;
+	margin: 0 0 0.75em;
 	border-top: 1px solid #ccc;
 	border-left: 1px solid #ccc;
 }

@@ -2,6 +2,7 @@
 	import { DocumentEditor } from '$lib';
 	import type { JSONContent } from '@tiptap/core';
 	import type { TemplateVariableDefinition } from '$lib';
+	import { JsonTreeView, ScrollArea } from 'compote-ui';
 
 	let html = $state(
 		`<h1>Hello compote-editor!</h1>
@@ -76,34 +77,40 @@
 		The supported editing extensions are loaded by default. Pass extra TipTap extensions via the
 		<code>extensions</code> prop to customize.
 	</p>
-
-	<DocumentEditor bind:content={html} page={{ format: 'A4' }} onSave={save} />
+	<div class="h-200">
+		<DocumentEditor bind:content={html} page={{ format: 'A4' }} onSave={save} />
+	</div>
 
 	<details class="mt-6">
 		<summary class="cursor-pointer text-sm font-medium text-ink-dim">HTML output</summary>
 		<pre class="mt-2 overflow-auto rounded-md bg-surface-2 p-3 text-xs">{html}</pre>
 	</details>
+	<div class="h-200">
+		<h2 class="mb-2 mt-10 text-xl font-bold">Template mode</h2>
+		<p class="mb-6 text-sm text-ink-dim">
+			Template variables are stored as JSON nodes and rendered as placeholders in the editor.
+		</p>
+		<div class="flex h-full">
+			<DocumentEditor
+				mode="template"
+				contentFormat="json"
+				bind:content={templateJson}
+				template={{ fields: templateFields }}
+				page={{ format: 'A4' }}
+				onSave={saveTemplate}
+			/>
 
-	<h2 class="mb-2 mt-10 text-xl font-bold">Template mode</h2>
-	<p class="mb-6 text-sm text-ink-dim">
-		Template variables are stored as JSON nodes and rendered as placeholders in the editor.
-	</p>
-
-	<DocumentEditor
-		mode="template"
-		contentFormat="json"
-		bind:content={templateJson}
-		template={{ fields: templateFields }}
-		page={{ format: 'A4' }}
-		onSave={saveTemplate}
-	/>
-
-	<details class="mt-6">
-		<summary class="cursor-pointer text-sm font-medium text-ink-dim">Template JSON output</summary>
-		<pre class="mt-2 overflow-auto rounded-md bg-surface-2 p-3 text-xs">{JSON.stringify(
-				templateJson,
-				null,
-				2
-			)}</pre>
-	</details>
+			<div>
+				<p>TreeView</p>
+				<ScrollArea.Root class="h-96">
+					<ScrollArea.Viewport>
+						<ScrollArea.Content>
+							<JsonTreeView data={$state.snapshot(templateJson)} defaultExpandedDepth={5} />
+						</ScrollArea.Content>
+					</ScrollArea.Viewport>
+					<ScrollArea.Scrollbar orientation="vertical"><ScrollArea.Thumb /></ScrollArea.Scrollbar>
+				</ScrollArea.Root>
+			</div>
+		</div>
+	</div>
 </div>

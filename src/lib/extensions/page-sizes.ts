@@ -23,7 +23,7 @@ const getPageSize = (
 	marginRight
 });
 
-export const A4_PAGE_SIZE: PageSize = getPageSize(1123, 794, 95, 95, 76, 76);
+export const A4_PAGE_SIZE: PageSize = getPageSize(1123, 794, 91, 91, 74, 74);
 export const A3_PAGE_SIZE: PageSize = getPageSize(1591, 1123, 95, 95, 76, 76);
 export const A5_PAGE_SIZE: PageSize = getPageSize(794, 419, 76, 76, 57, 57);
 export const LETTER_PAGE_SIZE: PageSize = getPageSize(1060, 818, 96, 96, 96, 96);

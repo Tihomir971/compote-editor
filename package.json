@@ -33,37 +33,37 @@
 		}
 	},
 	"peerDependencies": {
-		"compote-ui": "^0.48.1",
+		"compote-ui": ">=0.48.1 <1",
 		"svelte": "^5.55.9"
 	},
 	"dependencies": {
-		"@tiptap/core": "^3.23.6",
-		"@tiptap/extension-subscript": "^3.23.6",
-		"@tiptap/extension-superscript": "^3.23.6",
-		"@tiptap/extension-table": "^3.23.6",
-		"@tiptap/extension-text-align": "^3.23.6",
-		"@tiptap/extension-text-style": "^3.23.6",
-		"@tiptap/pm": "^3.23.6",
-		"@tiptap/starter-kit": "^3.23.6",
+		"@tiptap/core": "^3.26.0",
+		"@tiptap/extension-subscript": "^3.26.0",
+		"@tiptap/extension-superscript": "^3.26.0",
+		"@tiptap/extension-table": "^3.26.0",
+		"@tiptap/extension-text-align": "^3.26.0",
+		"@tiptap/extension-text-style": "^3.26.0",
+		"@tiptap/pm": "^3.26.0",
+		"@tiptap/starter-kit": "^3.26.0",
 		"pagedjs": "^0.4.3"
 	},
 	"devDependencies": {
-		"compote-ui": "^0.49.2",
+		"compote-ui": "^0.56.0",
 		"@eslint/compat": "^2.0.4",
 		"@eslint/js": "^10.0.1",
 		"@iconify-json/ph": "^1.2.2",
 		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/kit": "^2.61.1",
-		"@sveltejs/package": "^2.5.7",
+		"@sveltejs/package": "^2.5.8",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@tailwindcss/vite": "^4.2.2",
 		"@types/node": "^22",
-		"eslint": "^10.2.0",
+		"eslint": "^10.4.1",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.17.0",
 		"globals": "^17.4.0",
-		"prettier": "^3.8.1",
-		"prettier-plugin-svelte": "^4.0.1",
+		"prettier": "^3.8.4",
+		"prettier-plugin-svelte": "^4.1.0",
 		"prettier-plugin-tailwindcss": "^0.8.0",
 		"publint": "^0.3.18",
 		"svelte": "^5.55.9",
@@ -72,7 +72,7 @@
 		"typescript": "^6.0.2",
 		"typescript-eslint": "^8.60.0",
 		"unplugin-icons": "^23.0.1",
-		"vite": "^8.0.14"
+		"vite": "^8.0.16"
 	},
 	"keywords": [
 		"svelte"

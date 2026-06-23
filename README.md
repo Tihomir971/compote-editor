@@ -1,65 +1,159 @@
-# Svelte library
+# compote-editor
 
-Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).
+Svelte 5 document editor component built on TipTap v3, with live page pagination, template
+variables, table editing, and Paged.js-backed printing.
 
-Read more about creating a library [in the docs](https://svelte.dev/docs/kit/packaging).
+The package exports a ready-to-use `DocumentEditor` component plus the small set of types and
+helpers needed by consumers. Persistence is intentionally left to the consuming app through
+callbacks such as `onSave` and `onUpdate`.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- Svelte 5 component API with bindable HTML or TipTap JSON content.
+- TipTap v3 editor defaults for headings, lists, alignment, inline formatting, font size, line
+  height, tables, page breaks, and undo/redo.
+- Live pagination for A4 and Letter documents, including page margins and manual page breaks.
+- Template mode for inserting structured template variables into JSON documents.
+- Built-in toolbar using `compote-ui`.
+- Print helper that renders document HTML through the bundled Paged.js polyfill.
 
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-bun x sv@0.15.3 create --template library --types ts --add prettier eslint tailwindcss="plugins:none" mcp="ide:other+setup:remote" --install bun compote-editor
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Installation
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+bun add compote-editor
 ```
 
-Everything inside `src/lib` is part of your library, everything inside `src/routes` can be used as a showcase or preview app.
-
-## Building
-
-To build your library:
+Install the peer dependencies expected by the library:
 
 ```sh
-npm pack
+bun add svelte compote-ui
 ```
 
-To create a production version of your showcase app:
+## Basic Usage
+
+```svelte
+<script lang="ts">
+	import { DocumentEditor } from 'compote-editor';
+
+	let content = $state('<h1>Hello compote-editor</h1><p>Start writing...</p>');
+
+	function save({ html }: { html: string }) {
+		console.info('Saved HTML', html);
+	}
+</script>
+
+<div class="h-[800px]">
+	<DocumentEditor bind:content page={{ format: 'A4' }} onSave={save} />
+</div>
+```
+
+By default, `DocumentEditor` reads and writes HTML content. It calls `onUpdate` after editor
+transactions and calls `onSave` from the toolbar save button or `Ctrl/Cmd + S`.
+
+## Template Mode
+
+Use template mode when the document needs structured placeholders. Template documents use TipTap
+JSON content so variable nodes can be preserved.
+
+```svelte
+<script lang="ts">
+	import { DocumentEditor, type TemplateVariableDefinition } from 'compote-editor';
+	import type { JSONContent } from '@tiptap/core';
+
+	const fields: TemplateVariableDefinition[] = [
+		{ id: 'customer.name', label: 'Customer Name', group: 'Customer' },
+		{ id: 'document.date', label: 'Document Date', group: 'Document' }
+	];
+
+	let content = $state<JSONContent>({
+		type: 'doc',
+		content: [
+			{
+				type: 'paragraph',
+				content: [{ type: 'text', text: 'Dear customer,' }]
+			}
+		]
+	});
+</script>
+
+<DocumentEditor
+	mode="template"
+	contentFormat="json"
+	bind:content
+	template={{ fields }}
+	page={{ format: 'A4' }}
+/>
+```
+
+The toolbar groups template variables by `group` and inserts them as `templateVariable` nodes with
+`id` and `label` attributes.
+
+## Readonly JSON Mode
+
+```svelte
+<DocumentEditor mode="readonly" contentFormat="json" content={documentJson} />
+```
+
+Readonly mode disables editing while keeping the paginated document view and print action
+available.
+
+## Component Props
+
+`DocumentEditor` accepts these main props:
+
+- `content`: bindable `string | JSONContent`.
+- `mode`: `'editor' | 'template' | 'readonly'`. Defaults to `'editor'`.
+- `contentFormat`: `'html' | 'json'`. Defaults to HTML, except template mode defaults to JSON.
+- `extensions`: extra TipTap extensions. Extensions with the same name replace the defaults.
+- `page`: `{ format, pagination }`, where `format` is `'A4'` or `'Letter'`.
+- `classes`: optional class overrides for `root` and `pageArea`.
+- `template`: `{ fields }` for template variable insertion.
+- `onUpdate`: receives `{ content, html, json, editor }` after editor transactions.
+- `onSave`: receives `{ content, html, json, editor }` from save actions.
+- `onPrint`: optional custom print handler. If omitted, the editor uses `printWithPagedJs`.
+
+## Exports
+
+```ts
+export { DocumentEditor, TemplateVariable, printWithPagedJs } from 'compote-editor';
+export type {
+	DocumentEditorContent,
+	DocumentEditorContentFormat,
+	DocumentEditorMode,
+	DocumentEditorPageOptions,
+	DocumentEditorPayload,
+	DocumentEditorSaveHandler,
+	DocumentEditorUpdateHandler,
+	TemplateVariableDefinition,
+	PrintWithPagedJsOptions
+} from 'compote-editor';
+```
+
+## Printing
+
+The default print action builds a temporary iframe with printable HTML, embedded document
+typography, bundled Noto Sans fonts, and the bundled Paged.js polyfill.
+
+You can also call the helper directly:
+
+```ts
+import { printWithPagedJs } from 'compote-editor';
+
+printWithPagedJs({
+	content: '<h1>Printable document</h1>',
+	format: 'A4',
+	lang: 'en'
+});
+```
+
+## Development
 
 ```sh
-npm run build
+bun run dev
+bun run check
+bun run lint
+bun run build
 ```
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-
-## Publishing
-
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
-
-To publish your library to [npm](https://www.npmjs.com):
-
-```sh
-npm publish
-```
+`src/lib` contains the library source. `src/routes` contains the local demo app. Generated output
+in `dist` and `.svelte-kit` should not be hand-edited.

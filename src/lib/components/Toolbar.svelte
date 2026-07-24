@@ -93,7 +93,7 @@
 	);
 
 	const FONT_SIZE_PTS = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72];
-	const FONT_SIZE_ITEMS = FONT_SIZE_PTS.map((n) => ({ value: n + 'pt', label: String(n) }));
+	const FONT_SIZE_ITEMS = FONT_SIZE_PTS.map((n) => ({ value: n + 'pt', label: n + ' pt' }));
 
 	// Base document font size (matches typography.css .document-content font-size)
 	const BASE_PT = 11;
@@ -107,7 +107,10 @@
 	};
 
 	const LINE_HEIGHT_VALUES = [1.0, 1.2, 1.3, 1.4, 1.5, 1.6, 2.0];
-	const LINE_HEIGHT_ITEMS = LINE_HEIGHT_VALUES.map((n) => ({ value: String(n), label: String(n) }));
+	const LINE_HEIGHT_ITEMS = LINE_HEIGHT_VALUES.map((n) => ({
+		value: String(n),
+		label: '×' + n.toFixed(1)
+	}));
 	const groupedTemplateFields = $derived.by(() => {
 		const groups = new SvelteMap<string, TemplateVariableDefinition[]>();
 
@@ -310,7 +313,7 @@
 			<div class="h-5 w-px bg-border"></div>
 		{/if}
 		{#if hasFontSize}
-			<div class="w-20">
+			<div class="w-20" title="Font size">
 				<Select
 					items={FONT_SIZE_ITEMS}
 					value={currentFontSize}
@@ -324,7 +327,7 @@
 			</div>
 		{/if}
 		{#if hasLineHeight}
-			<div class="w-20">
+			<div class="w-20" title="Line height">
 				<Select
 					items={LINE_HEIGHT_ITEMS}
 					value={currentLineHeight}

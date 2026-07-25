@@ -12,24 +12,18 @@
 	import Toolbar from './Toolbar.svelte';
 	import typographyCss from '../print/typography.css?raw';
 	import { DOCUMENT_FONT_FACE_CSS } from '../print/embedded-fonts.js';
-	import { type PageFormatKey } from '../print/page-formats.js';
 	import { printWithPagedJs } from '../print/print-with-pagedjs.js';
 	import { PageBreak } from '../extensions/PageBreak.js';
 	import { TemplateVariable } from '../extensions/TemplateVariable.js';
 	import { DocumentPagination } from '../extensions/DocumentPagination.js';
 	import { BlockLineHeight } from '../extensions/BlockLineHeight.js';
-	import { PAGE_SIZES, type PageSize } from '../extensions/page-sizes.js';
+	import { DEFAULT_PAGE_FORMAT, getPageSize } from '../page-geometry.js';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type {
 		DocumentEditorCommonProps,
 		DocumentEditorContentFormat,
 		DocumentEditorMode
 	} from '../document-editor-options.js';
-
-	const FORMAT_TO_PAGE_SIZE: Record<PageFormatKey, PageSize> = {
-		A4: PAGE_SIZES.A4,
-		Letter: PAGE_SIZES.LETTER
-	};
 
 	const DEFAULT_EXTENSIONS: Extensions = [
 		StarterKit,
@@ -107,7 +101,7 @@
 			document.head.appendChild(style);
 		}
 
-		const pageSize = FORMAT_TO_PAGE_SIZE[page.format ?? 'A4'] ?? PAGE_SIZES.A4;
+		const pageSize = getPageSize(page.format);
 
 		const e = new Editor({
 			element: editorEl!,
@@ -139,12 +133,9 @@
 	});
 
 	$effect(() => {
-		const currentFormat = page.format ?? 'A4';
+		const currentFormat = page.format ?? DEFAULT_PAGE_FORMAT;
 		untrack(() => {
-			const editor = editorState.editor;
-			if (editor) {
-				editor.commands.updatePageSize(FORMAT_TO_PAGE_SIZE[currentFormat] ?? PAGE_SIZES.A4);
-			}
+			editorState.editor?.commands.updatePageSize(getPageSize(currentFormat));
 		});
 	});
 
@@ -156,7 +147,7 @@
 
 		const printContent =
 			editorState.editor?.getHTML() ?? (typeof content === 'string' ? content : '');
-		printWithPagedJs({ content: printContent, format: page.format ?? 'A4' });
+		printWithPagedJs({ content: printContent, format: page.format });
 	}
 
 	async function handleSave() {
@@ -191,7 +182,7 @@
 
 <div
 	class={cn(
-		'flex min-h-0 flex-col rounded-md border border-border bg-surface-1 h-full',
+		'flex h-full min-h-0 flex-col rounded-md border border-border bg-surface-1',
 		classes.root
 	) ?? ''}
 >

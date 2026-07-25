@@ -1,6 +1,11 @@
 import { DOCUMENT_FONT_FACE_CSS } from './embedded-fonts.js';
 import typographyCss from './typography.css?raw';
-import { PAGE_FORMATS, type PageFormatKey } from './page-formats.js';
+import {
+	DEFAULT_PAGE_FORMAT,
+	getPageGeometry,
+	toPageRuleCss,
+	type PageFormatKey
+} from '../page-geometry.js';
 
 export interface PagedJsDocumentOptions {
 	content: string;
@@ -14,21 +19,14 @@ export interface PagedJsDocumentOptions {
 
 export function buildPagedJsHtml({
 	content,
-	format = 'A4',
+	format = DEFAULT_PAGE_FORMAT,
 	lang = 'en',
 	pagedJsScriptUrl,
 	pagedJsInlineContent
 }: PagedJsDocumentOptions): string {
-	const pageFormat = PAGE_FORMATS[format];
 	const pagedJsScript = pagedJsInlineContent
 		? `<script>${pagedJsInlineContent}</script>`
 		: `<script src="${pagedJsScriptUrl}"></script>`;
-
-	const marginShorthand =
-		pageFormat.marginTop === pageFormat.marginBottom &&
-		pageFormat.marginLeft === pageFormat.marginRight
-			? `${pageFormat.marginTop} ${pageFormat.marginLeft}`
-			: `${pageFormat.marginTop} ${pageFormat.marginRight} ${pageFormat.marginBottom} ${pageFormat.marginLeft}`;
 
 	return `<!DOCTYPE html>
 <html lang="${lang}" data-format="${format}">
@@ -36,10 +34,7 @@ export function buildPagedJsHtml({
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-@page {
-	size: ${format};
-	margin: ${marginShorthand};
-}
+${toPageRuleCss(getPageGeometry(format))}
 
 html, body {
 	margin: 0;
@@ -61,9 +56,9 @@ window.PagedConfig = {
 ${pagedJsScript}
 </head>
 <body>
-<div class="tiptap document-content">
-${content}
-</div>
+<!-- No whitespace around the content: .document-content uses white-space: break-spaces to
+     match the editor's line breaking, which would render stray newlines as real whitespace. -->
+<div class="tiptap document-content">${content}</div>
 </body>
 </html>`;
 }

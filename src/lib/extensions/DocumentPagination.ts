@@ -1,8 +1,9 @@
 import { Extension, type CommandProps } from '@tiptap/core';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 import { cn } from 'compote-ui';
-import type { PageSize } from './page-sizes.js';
+import { getPageSize, type PageSize } from '../page-geometry.js';
 
 export interface DocumentPaginationOptions {
 	enabled: boolean;
@@ -21,6 +22,22 @@ interface PageWidget {
 	pos: number;
 	fillerHeight: number;
 	manual: boolean;
+	/**
+	 * When greater than zero the break falls between two table rows, so the filler has to be
+	 * rendered as a `<tr>` spanning this many columns — a `<div>` would be hoisted out of the
+	 * table by the HTML parser.
+	 */
+	columns: number;
+}
+
+interface BreakCandidate {
+	/** Document position the page-break widget is inserted at. */
+	pos: number;
+	nodeSize: number;
+	typeName: string;
+	element: HTMLElement;
+	/** Columns to span when this candidate sits inside a table; zero at the top level. */
+	columns: number;
 }
 
 interface PaginationPluginState {
@@ -30,13 +47,8 @@ interface PaginationPluginState {
 
 const defaultOptions: DocumentPaginationOptions = {
 	enabled: true,
-	pageHeight: 800,
-	pageWidth: 789,
-	marginTop: 20,
-	marginBottom: 20,
-	marginLeft: 50,
-	marginRight: 50,
-	pageGap: 50,
+	...getPageSize(),
+	pageGap: 20,
 	pageGapClass: '',
 	pageGapBorderColor: '#e5e5e5'
 };
@@ -119,6 +131,18 @@ const ensureStyleElement = () => {
       pointer-events: none;
     }
 
+    .cdp-page-widget-row {
+      display: table-row;
+    }
+
+    /* The filler cell must not inherit the document's cell borders or padding. */
+    .cdp-page-widget-cell {
+      padding: 0 !important;
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+    }
+
     .cdp-page-fill {
       height: var(--cdp-page-fill-height);
       background: white;
@@ -149,24 +173,74 @@ const getContentHeight = (options: DocumentPaginationOptions) => {
 	return Math.max(1, options.pageHeight - options.marginTop - options.marginBottom);
 };
 
-const getTopLevelBlocks = (view: EditorView) => {
-	const blocks: Array<{ pos: number; nodeSize: number; typeName: string; element: HTMLElement }> =
-		[];
+const countColumns = (row: HTMLElement) =>
+	Array.from(row.children).reduce(
+		(total, cell) => total + ((cell as HTMLTableCellElement).colSpan || 1),
+		0
+	);
 
-	view.state.doc.descendants((node, pos, parent) => {
-		if (parent !== view.state.doc) {
-			return false;
+/**
+ * Rows of a table, as individually breakable units. Breaking before the first row is the same
+ * as breaking before the table itself, so that candidate keeps the table's own position and is
+ * rendered as an ordinary block widget.
+ */
+const getTableRowCandidates = (
+	view: EditorView,
+	table: ProseMirrorNode,
+	tablePos: number
+): BreakCandidate[] => {
+	const candidates: BreakCandidate[] = [];
+	let offset = tablePos + 1;
+
+	table.forEach((row) => {
+		const rowPos = offset;
+		offset += row.nodeSize;
+
+		const element = view.nodeDOM(rowPos);
+		if (!(element instanceof HTMLElement)) {
+			return;
 		}
 
-		const element = view.nodeDOM(pos) as HTMLElement | null;
-		if (element instanceof HTMLElement) {
-			blocks.push({ pos, nodeSize: node.nodeSize, typeName: node.type.name, element });
-		}
-
-		return false;
+		const first = candidates.length === 0;
+		candidates.push({
+			pos: first ? tablePos : rowPos,
+			nodeSize: row.nodeSize,
+			typeName: row.type.name,
+			element,
+			columns: first ? 0 : countColumns(element)
+		});
 	});
 
-	return blocks;
+	return candidates;
+};
+
+const getBreakCandidates = (view: EditorView) => {
+	const candidates: BreakCandidate[] = [];
+
+	view.state.doc.forEach((node, pos) => {
+		const element = view.nodeDOM(pos);
+		if (!(element instanceof HTMLElement)) {
+			return;
+		}
+
+		if (node.type.name === 'table') {
+			const rows = getTableRowCandidates(view, node, pos);
+			if (rows.length) {
+				candidates.push(...rows);
+				return;
+			}
+		}
+
+		candidates.push({
+			pos,
+			nodeSize: node.nodeSize,
+			typeName: node.type.name,
+			element,
+			columns: 0
+		});
+	});
+
+	return candidates;
 };
 
 const measurePageWidgets = (view: EditorView, options: DocumentPaginationOptions): PageWidget[] => {
@@ -174,7 +248,7 @@ const measurePageWidgets = (view: EditorView, options: DocumentPaginationOptions
 		return [];
 	}
 
-	const blocks = getTopLevelBlocks(view);
+	const blocks = getBreakCandidates(view);
 	if (!blocks.length) {
 		return [];
 	}
@@ -185,17 +259,20 @@ const measurePageWidgets = (view: EditorView, options: DocumentPaginationOptions
 	let previousBottom: number | undefined;
 
 	for (const block of blocks) {
+		// Kept fractional on purpose: rounding each block up drifts by up to a pixel per block,
+		// which across a long table is enough to move a page break by a whole row relative to
+		// print, where the same geometry is measured exactly.
 		const rect = block.element.getBoundingClientRect();
-		const gapBefore =
-			previousBottom === undefined ? 0 : Math.max(0, Math.round(rect.top - previousBottom));
-		const blockHeight = Math.max(0, Math.ceil(rect.height));
+		const gapBefore = previousBottom === undefined ? 0 : Math.max(0, rect.top - previousBottom);
+		const blockHeight = Math.max(0, rect.height);
 
 		if (block.typeName === 'pageBreak') {
 			const fillerHeight = Math.max(0, contentHeight - cursor) + options.marginBottom;
 			widgets.push({
 				pos: block.pos + block.nodeSize,
 				fillerHeight,
-				manual: true
+				manual: true,
+				columns: 0
 			});
 			cursor = 0;
 			previousBottom = rect.bottom;
@@ -208,7 +285,8 @@ const measurePageWidgets = (view: EditorView, options: DocumentPaginationOptions
 			widgets.push({
 				pos: block.pos,
 				fillerHeight,
-				manual: false
+				manual: false,
+				columns: block.columns
 			});
 			cursor = blockHeight;
 		} else {
@@ -226,26 +304,44 @@ const buildDecorationSet = (
 	options: DocumentPaginationOptions,
 	widgets: PageWidget[]
 ) => {
+	const buildParts = (widget: PageWidget) => {
+		const fill = document.createElement('div');
+		fill.classList.add('cdp-page-fill');
+		fill.style.setProperty('--cdp-page-fill-height', `${widget.fillerHeight}px`);
+
+		const gap = document.createElement('div');
+		gap.className = cn('cdp-page-gap', options.pageGapClass) ?? '';
+
+		const nextPageMargin = document.createElement('div');
+		nextPageMargin.classList.add('cdp-next-page-margin');
+
+		return [fill, gap, nextPageMargin];
+	};
+
 	const decorations = widgets.map((widget, index) => {
 		return Decoration.widget(
 			widget.pos,
 			() => {
+				if (widget.columns > 0) {
+					const row = document.createElement('tr');
+					row.classList.add('cdp-page-widget', 'cdp-page-widget-row');
+					row.dataset.pageWidget = 'auto';
+					row.dataset.pageWidgetIndex = String(index);
+
+					const cell = document.createElement('td');
+					cell.colSpan = widget.columns;
+					cell.classList.add('cdp-page-widget-cell');
+					cell.append(...buildParts(widget));
+
+					row.appendChild(cell);
+					return row;
+				}
+
 				const el = document.createElement('div');
 				el.classList.add('cdp-page-widget');
 				el.dataset.pageWidget = widget.manual ? 'manual' : 'auto';
 				el.dataset.pageWidgetIndex = String(index);
-
-				const fill = document.createElement('div');
-				fill.classList.add('cdp-page-fill');
-				fill.style.setProperty('--cdp-page-fill-height', `${widget.fillerHeight}px`);
-
-				const gap = document.createElement('div');
-				gap.className = cn('cdp-page-gap', options.pageGapClass) ?? '';
-
-				const nextPageMargin = document.createElement('div');
-				nextPageMargin.classList.add('cdp-next-page-margin');
-
-				el.append(fill, gap, nextPageMargin);
+				el.append(...buildParts(widget));
 				return el;
 			},
 			{ side: widget.manual ? 1 : -1 }

@@ -6,7 +6,14 @@
 			"Bash(Format-Table -AutoSize)",
 			"mcp__svelte-mcp__get-documentation",
 			"Bash(Get-ChildItem -Path \"src\\\\lib\" -Recurse -Directory)",
-			"Bash(Select-Object -ExpandProperty FullName)"
+			"Bash(Select-Object -ExpandProperty FullName)",
+			"Bash(bun run *)",
+			"Bash(awk '{print $5, $9}')",
+			"Bash(awk '{print $5}')",
+			"Bash(taskkill //F //IM msedge.exe //T)",
+			"Bash(rm -rf edge-wrap)",
+			"Bash(tr '\\\\\\\\' '/')",
+			"Bash(grep -oE 'DocumentPagination.ts\" [0-9]+:[0-9]+ \"[^\\\\\\\\]{0,150}')"
 		]
 	}
 }

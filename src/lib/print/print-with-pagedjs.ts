@@ -1,5 +1,5 @@
 import { buildPagedJsHtml } from './build-printable-html.js';
-import type { PageFormatKey } from './page-formats.js';
+import { DEFAULT_PAGE_FORMAT, type PageFormatKey } from '../page-geometry.js';
 import pagedJsContent from './paged.polyfill.txt?raw';
 
 export interface PrintWithPagedJsOptions {
@@ -10,7 +10,7 @@ export interface PrintWithPagedJsOptions {
 
 export function printWithPagedJs({
 	content,
-	format = 'A4',
+	format = DEFAULT_PAGE_FORMAT,
 	lang = 'en'
 }: PrintWithPagedJsOptions): void {
 	const html = buildPagedJsHtml({ content, format, lang, pagedJsInlineContent: pagedJsContent });

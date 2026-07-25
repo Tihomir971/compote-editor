@@ -314,13 +314,29 @@ Or drive pagination commands imperatively — export the editor reference if nee
 
 ## Page formats / sizes
 
-```ts
-import { PAGE_FORMATS, PAGE_SIZES, type PageFormatKey } from 'compote-editor';
+`page.format` accepts `'A3' | 'A4' | 'A5' | 'Letter' | 'Legal' | 'Tabloid'` (default `'A4'`).
 
-PAGE_FORMATS.A4; // → { marginTop: '25mm', marginBottom: '25mm', marginLeft: '20mm', marginRight: '20mm' }
-PAGE_SIZES.A4; // → { pageHeight: 1123, pageWidth: 794, marginTop: 96, ... } (pixels for PaginationPlus)
-PAGE_SIZES.Letter; // → { pageHeight: 1056, pageWidth: 816, ... }
+All page geometry comes from one source of truth, `src/lib/page-geometry.ts`. Sizes are
+declared in **millimetres** and converted to CSS pixels for the editor, so the on-screen
+content box and the printed `@page` content box are identical. Never hard-code a page
+dimension anywhere else — change `PAGE_GEOMETRY` and both editor and print follow.
+
+```ts
+import {
+	PAGE_GEOMETRY,
+	PAGE_FORMAT_KEYS,
+	getPageGeometry,
+	getPageSize,
+	mmToPx,
+	type PageFormatKey
+} from 'compote-editor';
+
+PAGE_GEOMETRY.A4; // → { width: 210, height: 297, marginTop: 25, marginRight: 20, ... } (mm)
+getPageSize('A4'); // → { pageWidth: 793.7, pageHeight: 1122.52, marginTop: 94.49, ... } (CSS px)
+getPageGeometry('Letter'); // → 215.9 × 279.4mm with 1in margins
 ```
+
+ISO sizes use 25mm/20mm margins (A5: 20mm/15mm); US sizes use 1in margins on all sides.
 
 ## Gotchas
 

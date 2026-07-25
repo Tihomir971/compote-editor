@@ -1,7 +1,7 @@
 import type { Editor, JSONContent } from '@tiptap/core';
 import type { Extensions } from '@tiptap/core';
 import type { DocumentPaginationOptions } from './extensions/DocumentPagination.js';
-import type { PageFormatKey } from './print/page-formats.js';
+import type { PageFormatKey } from './page-geometry.js';
 import type { TemplateVariableDefinition } from './template-variables.js';
 
 export type DocumentEditorContent = string | JSONContent;

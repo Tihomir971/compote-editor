@@ -3,6 +3,21 @@
 	font-size: 11pt;
 	line-height: 1.6;
 	color: black;
+
+	/*
+	 * Text-layout parity with the editor. prosemirror-view applies all of the below to the
+	 * editable element, and they change where lines break — most importantly
+	 * `white-space: break-spaces`, under which the space *after* the last word on a line must
+	 * itself fit, so the editor breaks earlier than a default-collapsing document would.
+	 * Print must match or identical text wraps differently on screen and on paper.
+	 * Keep in sync with prosemirror.css — do not remove.
+	 */
+	white-space: break-spaces;
+	overflow-wrap: break-word;
+	-webkit-line-break: after-white-space;
+	tab-size: 4;
+	font-variant-ligatures: none;
+	font-feature-settings: 'liga' 0;
 }
 
 /* Headings */
@@ -148,7 +163,12 @@
 	border-collapse: separate;
 	border-spacing: 0;
 	table-layout: fixed;
-	overflow: hidden;
+	/*
+	 * Deliberately not `overflow: hidden`. Clipping the table hides rows that spill past the
+	 * page box from Paged.js's overflow detection, so it leaves an overflowing row on the page
+	 * instead of moving it to the next one, and the page break drifts away from the editor's.
+	 */
+	overflow: visible;
 	font-size: 1em;
 	margin: 0;
 	border-top: 1px solid #ccc;
@@ -172,6 +192,20 @@
 	.document-content table.no-border td {
 		box-shadow: none;
 	}
+}
+
+/*
+ * Split tall tables between rows, never through one, and let a table begin partway down a
+ * page. Paged.js otherwise moves an oversized table to a fresh page whole and only splits it
+ * once it still does not fit, which strands the rows that the editor happily fits above it.
+ * The editor breaks at row boundaries because it cannot fragment a row; print matches.
+ */
+.document-content table {
+	break-inside: auto;
+}
+
+.document-content tr {
+	break-inside: avoid;
 }
 
 .document-content th,

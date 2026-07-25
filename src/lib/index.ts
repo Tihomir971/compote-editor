@@ -16,3 +16,12 @@ export type {
 } from './document-editor-options.js';
 export { printWithPagedJs } from './print/print-with-pagedjs.js';
 export type { PrintWithPagedJsOptions } from './print/print-with-pagedjs.js';
+export {
+	DEFAULT_PAGE_FORMAT,
+	PAGE_FORMAT_KEYS,
+	PAGE_GEOMETRY,
+	getPageGeometry,
+	getPageSize,
+	mmToPx
+} from './page-geometry.js';
+export type { PageFormatKey, PageGeometry, PageSize } from './page-geometry.js';

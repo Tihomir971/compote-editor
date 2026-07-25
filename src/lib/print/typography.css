@@ -11,10 +11,14 @@
 	 * itself fit, so the editor breaks earlier than a default-collapsing document would.
 	 * Print must match or identical text wraps differently on screen and on paper.
 	 * Keep in sync with prosemirror.css — do not remove.
+	 *
+	 * The editor additionally computes `line-break: after-white-space`, which the browser applies
+	 * to editing hosts. It is deliberately not replicated: `after-white-space` is not a value the
+	 * standard `line-break` property accepts, so only the `-webkit-` form would take effect, and
+	 * measurement showed it changes nothing once `white-space: break-spaces` is set.
 	 */
 	white-space: break-spaces;
 	overflow-wrap: break-word;
-	-webkit-line-break: after-white-space;
 	tab-size: 4;
 	font-variant-ligatures: none;
 	font-feature-settings: 'liga' 0;
@@ -195,10 +199,28 @@
 }
 
 /*
- * Split tall tables between rows, never through one, and let a table begin partway down a
- * page. Paged.js otherwise moves an oversized table to a fresh page whole and only splits it
- * once it still does not fit, which strands the rows that the editor happily fits above it.
- * The editor breaks at row boundaries because it cannot fragment a row; print matches.
+ * Page fragmentation — keep this in step with DocumentPagination's break candidates.
+ *
+ * The editor can only break *between* top-level blocks, and inside a table between rows: a
+ * ProseMirror widget decoration cannot be placed inside a paragraph's line box. Print is held
+ * to the same model, so the two agree by construction rather than by coincidence. Without
+ * this, Paged.js splits a long paragraph mid-way down the page while the editor moves the
+ * whole block to the next one — a divergence of up to a full block height.
+ *
+ * Every top-level block is therefore atomic, and tables are the one exception: they fragment,
+ * at row boundaries. Selecting direct children rather than a tag list means any block type
+ * added later inherits the correct behaviour.
+ *
+ * A block taller than the page is the one case neither side can honour; both overflow it.
+ */
+.document-content > * {
+	break-inside: avoid;
+}
+
+/*
+ * Tables split, but only between rows, and may begin partway down a page. Paged.js otherwise
+ * moves an oversized table to a fresh page whole and splits it only once it still does not
+ * fit, stranding the rows the editor happily fits above it.
  */
 .document-content table {
 	break-inside: auto;

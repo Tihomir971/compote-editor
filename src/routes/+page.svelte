@@ -21,6 +21,19 @@
 			return `<p>[${n}] ${filler}</p>`;
 		}).join('\n');
 
+	// Long enough to land across a page boundary. This is the case that separates the two
+	// pagination models: a block that does not fit in the space left has to either move whole
+	// or be split, and the editor and print must make the same choice.
+	const longParagraphs = (from: number, to: number) =>
+		Array.from({ length: to - from + 1 }, (_, i) => {
+			const n = from + i;
+			const body =
+				'Long-form text is what separates the two pagination models, because a block that does ' +
+				'not fit in the space left on the page has to go somewhere, and the two engines can ' +
+				'disagree about whether it moves across whole or leaves some of its lines behind. ';
+			return `<p>[${n}] ${body.repeat(4 + (n % 3))}</p>`;
+		}).join('\n');
+
 	const tableRows = (count: number) =>
 		Array.from({ length: count }, (_, i) => {
 			const n = i + 1;
@@ -43,6 +56,8 @@ ${shortParagraphs(1, 12)}
 <table><tbody><tr><th>Name</th><th>Status</th><th>Notes</th></tr><tr><td>StarterKit</td><td>Default</td><td>Headings, lists, history, code, blockquote, horizontal rule</td></tr><tr><td>TableKit</td><td>Default</td><td>Resizable table support</td></tr></tbody></table>
 <h2>Short paragraphs, second run</h2>
 ${shortParagraphs(13, 26)}
+<h2>Long paragraphs</h2>
+${longParagraphs(101, 105)}
 <h2>Tall table</h2>
 <p>The table below is taller than a single page. It is the clearest way to see the difference between the editor, which currently moves whole blocks, and Paged.js, which splits rows across pages.</p>
 <table><tbody><tr><th>Ref</th><th>Section</th><th>Description</th><th>Status</th></tr>${tableRows(28)}</tbody></table>

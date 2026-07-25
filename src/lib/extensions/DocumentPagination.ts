@@ -152,6 +152,17 @@ const ensureStyleElement = () => {
       overflow-x: visible;
     }
 
+    /*
+     * The table's own left border runs the full height of the table, including across the break.
+     * Bleeding the white parts of the filler to the page edges — as the gap already does — paints
+     * over it, so the page boundary is not crossed by a stray rule.
+     */
+    .cdp-page-widget-cell .cdp-page-fill,
+    .cdp-page-widget-cell .cdp-next-page-margin {
+      margin-left: calc(-1 * var(--cdp-margin-left));
+      margin-right: calc(-1 * var(--cdp-margin-right));
+    }
+
     .cdp-page-fill {
       height: var(--cdp-page-fill-height);
       background: white;

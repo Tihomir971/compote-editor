@@ -143,6 +143,15 @@ const ensureStyleElement = () => {
       box-shadow: none !important;
     }
 
+    /*
+     * The table wrapper scrolls horizontally, which clips the page gap where it bleeds out to
+     * the page edges. A table carrying a page break opts out of that clipping so its gap looks
+     * like every other one; tables without a break keep their scrolling.
+     */
+    .cdp-with-pagination .tableWrapper:has(.cdp-page-widget-row) {
+      overflow-x: visible;
+    }
+
     .cdp-page-fill {
       height: var(--cdp-page-fill-height);
       background: white;

@@ -97,6 +97,59 @@ export function extractBodyHtml(input: string): string {
 	return body.innerHTML.trim();
 }
 
+function openTag(el: Element): string {
+	const attrs = [...el.attributes]
+		.map((attr) => ` ${attr.name}="${attr.value.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`)
+		.join('');
+
+	return `<${el.localName}${attrs}>`;
+}
+
+function emit(node: Node, depth: number, lines: string[]): void {
+	const indent = '\t'.repeat(depth);
+
+	if (node.nodeType === Node.TEXT_NODE) {
+		const text = (node as Text).data.trim();
+		if (text !== '') lines.push(indent + text);
+		return;
+	}
+
+	if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+	const el = node as Element;
+	const hasBlockChildren = [...el.children].some((child) => BLOCK_TAGS.has(child.nodeName));
+
+	// Leaf blocks, anything inline, and <pre> (whose whitespace is significant) are emitted
+	// verbatim on one line — breaking inside them would change the rendered text.
+	if (el.nodeName === 'PRE' || !BLOCK_TAGS.has(el.nodeName) || !hasBlockChildren) {
+		lines.push(indent + el.outerHTML);
+		return;
+	}
+
+	lines.push(indent + openTag(el));
+	for (const child of el.childNodes) emit(child, depth + 1, lines);
+	lines.push(indent + `</${el.localName}>`);
+}
+
+/**
+ * Pretty-prints HTML for display in the source dialog: one block element per line, nested
+ * blocks indented with tabs.
+ *
+ * Line breaks are only introduced *between* block elements, never inside inline content or
+ * `<pre>`, so the added whitespace is exactly the kind `extractBodyHtml` strips on the way
+ * back in. Formatting is therefore round-trip safe.
+ *
+ * Browser-only: uses `DOMParser`.
+ */
+export function formatHtml(input: string): string {
+	const body = new DOMParser().parseFromString(input, 'text/html').body;
+	const lines: string[] = [];
+
+	for (const child of body.childNodes) emit(child, 0, lines);
+
+	return lines.join('\n');
+}
+
 /**
  * Heuristic check for whether a string is HTML markup rather than prose that merely
  * contains an angle bracket. Requires a matched tag pair or a self-closing/void tag.

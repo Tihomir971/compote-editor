@@ -14,7 +14,7 @@ export type {
 	DocumentEditorTemplateOptions,
 	DocumentEditorUpdateHandler
 } from './document-editor-options.js';
-export { extractBodyHtml, looksLikeHtml } from './html-import.js';
+export { extractBodyHtml, formatHtml, looksLikeHtml } from './html-import.js';
 export { printWithPagedJs } from './print/print-with-pagedjs.js';
 export type { PrintWithPagedJsOptions } from './print/print-with-pagedjs.js';
 export {

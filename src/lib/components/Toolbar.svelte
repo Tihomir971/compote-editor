@@ -3,7 +3,7 @@
 	import type { Editor } from '@tiptap/core';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { TemplateVariableDefinition } from '../template-variables.js';
-	import { extractBodyHtml, looksLikeHtml } from '../html-import.js';
+	import { extractBodyHtml, formatHtml, looksLikeHtml } from '../html-import.js';
 	import PhArrowCounterClockwise from '~icons/ph/arrow-counter-clockwise';
 	import PhArrowClockwise from '~icons/ph/arrow-clockwise';
 	import PhBracketsCurly from '~icons/ph/brackets-curly';
@@ -27,7 +27,8 @@
 	import PhScissors from '~icons/ph/scissors';
 	import PhTextSubscript from '~icons/ph/text-subscript';
 	import PhTextSuperscript from '~icons/ph/text-superscript';
-	import PhCodeSimple from '~icons/ph/code-simple';
+	import PhFileArrowUp from '~icons/ph/file-arrow-up';
+	import PhFileHtml from '~icons/ph/file-html';
 
 	let {
 		editorState,
@@ -183,25 +184,39 @@
 	}
 
 	let htmlDialogOpen = $state(false);
+	let htmlDialogMode = $state<'insert' | 'source'>('insert');
 	let htmlSource = $state('');
 	const htmlSourceInvalid = $derived(htmlSource.trim() !== '' && !looksLikeHtml(htmlSource));
 
-	function openHtmlDialog() {
+	// `preserveWhitespace: 'full'` keeps intentional spacing inside pre and table markup. The
+	// whitespace *between* block tags is already removed by extractBodyHtml, so this does not
+	// reintroduce empty paragraphs from pretty-printed input.
+	const HTML_PARSE_OPTIONS = { preserveWhitespace: 'full' } as const;
+
+	function openInsertHtmlDialog() {
+		htmlDialogMode = 'insert';
 		htmlSource = '';
 		htmlDialogOpen = true;
 	}
 
-	function insertHtml() {
-		const markup = extractBodyHtml(htmlSource);
-		if (!markup) return;
+	function openHtmlSourceDialog() {
+		htmlDialogMode = 'source';
+		// Seed from getHTML() rather than the original input: that is the post-schema
+		// serialization, so what the user edits round-trips without silently losing markup
+		// they can see in the box.
+		htmlSource = formatHtml(ed().getHTML());
+		htmlDialogOpen = true;
+	}
 
-		// `preserveWhitespace: 'full'` keeps intentional spacing in pre/table markup; without
-		// it the parser collapses runs of whitespace between block tags.
-		ed()
-			.chain()
-			.focus()
-			.insertContent(markup, { parseOptions: { preserveWhitespace: 'full' } })
-			.run();
+	function applyHtml() {
+		const markup = extractBodyHtml(htmlSource);
+
+		if (htmlDialogMode === 'source') {
+			ed().commands.setContent(markup, { parseOptions: HTML_PARSE_OPTIONS });
+		} else {
+			if (!markup) return;
+			ed().chain().focus().insertContent(markup, { parseOptions: HTML_PARSE_OPTIONS }).run();
+		}
 
 		htmlDialogOpen = false;
 	}
@@ -448,8 +463,16 @@
 	{/if}
 
 	<div class="h-5 w-px bg-border"></div>
-	<Button size="icon-sm" variant="ghost" aria-label="Insert HTML" onclick={openHtmlDialog}>
-		<PhCodeSimple />
+	<Button size="icon-sm" variant="ghost" aria-label="Insert HTML" onclick={openInsertHtmlDialog}>
+		<PhFileArrowUp />
+	</Button>
+	<Button
+		size="icon-sm"
+		variant="ghost"
+		aria-label="Edit HTML source"
+		onclick={openHtmlSourceDialog}
+	>
+		<PhFileHtml />
 	</Button>
 
 	{#if hasHorizontalRule || hasPageBreak}
@@ -500,24 +523,35 @@
 </div>
 
 <Dialog.Root bind:open={htmlDialogOpen} contentClass="max-w-3xl">
-	<Dialog.Title>Insert HTML</Dialog.Title>
+	<Dialog.Title>
+		{htmlDialogMode === 'source' ? 'Edit HTML source' : 'Insert HTML'}
+	</Dialog.Title>
 	<Dialog.Description>
-		Paste markup to insert at the cursor. A full document is accepted — only the body is used. Tags
-		the editor does not support are dropped.
+		{#if htmlDialogMode === 'source'}
+			Editing the whole document. Tags and attributes the editor does not support are dropped when
+			you apply.
+		{:else}
+			Paste markup to insert at the cursor. A full document is accepted — only the body is used.
+			Tags the editor does not support are dropped.
+		{/if}
 	</Dialog.Description>
 	<Field.Root invalid={htmlSourceInvalid}>
 		<Field.Textarea
 			bind:value={htmlSource}
-			rows={14}
+			rows={htmlDialogMode === 'source' ? 20 : 14}
 			class="font-mono text-sm"
 			placeholder="&lt;p&gt;Hello&lt;/p&gt;"
 		/>
 		{#if htmlSourceInvalid}
-			<Field.ErrorText>This does not look like HTML — it will be inserted as text.</Field.ErrorText>
+			<Field.ErrorText>
+				This does not look like HTML — it will be treated as plain text.
+			</Field.ErrorText>
 		{/if}
 	</Field.Root>
 	<Dialog.Footer>
 		<Dialog.CloseTrigger>Cancel</Dialog.CloseTrigger>
-		<Button disabled={htmlSource.trim() === ''} onclick={insertHtml}>Insert</Button>
+		<Button disabled={htmlDialogMode === 'insert' && htmlSource.trim() === ''} onclick={applyHtml}>
+			{htmlDialogMode === 'source' ? 'Apply' : 'Insert'}
+		</Button>
 	</Dialog.Footer>
 </Dialog.Root>

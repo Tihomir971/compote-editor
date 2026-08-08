@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Button, Menu, Select, ToggleGroup } from 'compote-ui';
+	import { Button, Dialog, Field, Menu, Select, ToggleGroup } from 'compote-ui';
 	import type { Editor } from '@tiptap/core';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { TemplateVariableDefinition } from '../template-variables.js';
+	import { extractBodyHtml, looksLikeHtml } from '../html-import.js';
 	import PhArrowCounterClockwise from '~icons/ph/arrow-counter-clockwise';
 	import PhArrowClockwise from '~icons/ph/arrow-clockwise';
 	import PhBracketsCurly from '~icons/ph/brackets-curly';
@@ -26,6 +27,7 @@
 	import PhScissors from '~icons/ph/scissors';
 	import PhTextSubscript from '~icons/ph/text-subscript';
 	import PhTextSuperscript from '~icons/ph/text-superscript';
+	import PhCodeSimple from '~icons/ph/code-simple';
 
 	let {
 		editorState,
@@ -179,27 +181,51 @@
 
 		ed().chain().focus().insertTemplateVariable({ id: variable.id, label: variable.label }).run();
 	}
+
+	let htmlDialogOpen = $state(false);
+	let htmlSource = $state('');
+	const htmlSourceInvalid = $derived(htmlSource.trim() !== '' && !looksLikeHtml(htmlSource));
+
+	function openHtmlDialog() {
+		htmlSource = '';
+		htmlDialogOpen = true;
+	}
+
+	function insertHtml() {
+		const markup = extractBodyHtml(htmlSource);
+		if (!markup) return;
+
+		// `preserveWhitespace: 'full'` keeps intentional spacing in pre/table markup; without
+		// it the parser collapses runs of whitespace between block tags.
+		ed()
+			.chain()
+			.focus()
+			.insertContent(markup, { parseOptions: { preserveWhitespace: 'full' } })
+			.run();
+
+		htmlDialogOpen = false;
+	}
 </script>
 
 <div class="flex flex-wrap items-center gap-1 border-b border-border p-1">
 	{#if hasUndoRedo}
 		<Button
-			size="icon"
+			size="icon-sm"
 			variant="ghost"
 			aria-label="Undo"
 			disabled={!editorState.editor!.can().undo()}
 			onclick={() => ed().chain().focus().undo().run()}
 		>
-			<PhArrowCounterClockwise class="size-6" />
+			<PhArrowCounterClockwise />
 		</Button>
 		<Button
-			size="icon"
+			size="icon-sm"
 			variant="ghost"
 			aria-label="Redo"
 			disabled={!editorState.editor!.can().redo()}
 			onclick={() => ed().chain().focus().redo().run()}
 		>
-			<PhArrowClockwise class="size-6" />
+			<PhArrowClockwise />
 		</Button>
 		<div class="h-5 w-px bg-border"></div>
 	{/if}
@@ -208,6 +234,7 @@
 		<ToggleGroup.Root
 			variant="ghost"
 			icon
+			size="sm"
 			value={activeBlock}
 			onValueChange={({ value }: { value: string[] }) => {
 				if (value[0] === 'h1') ed().chain().focus().toggleHeading({ level: 1 }).run();
@@ -231,6 +258,7 @@
 		<ToggleGroup.Root
 			variant="ghost"
 			icon
+			size="sm"
 			value={activeBlock}
 			onValueChange={({ value }: { value: string[] }) => {
 				if (value[0] === 'bulletList') ed().chain().focus().toggleBulletList().run();
@@ -254,6 +282,7 @@
 		<ToggleGroup.Root
 			variant="ghost"
 			icon
+			size="sm"
 			value={activeAlign}
 			onValueChange={({ value }) => {
 				if (value[0]) ed().chain().focus().setTextAlign(value[0]).run();
@@ -275,6 +304,7 @@
 		<ToggleGroup.Root
 			variant="ghost"
 			icon
+			size="sm"
 			multiple
 			value={inlineActive}
 			onValueChange={({ value }: { value: string[] }) => {
@@ -364,7 +394,7 @@
 				chain.run();
 			}}
 		>
-			<Menu.Trigger variant="ghost" size="icon"><PhTable class="size-6" /></Menu.Trigger>
+			<Menu.Trigger variant="ghost" size="icon-sm"><PhTable /></Menu.Trigger>
 			<Menu.Content>
 				<Menu.Item value="insert">Insert table</Menu.Item>
 				{#if inTable}
@@ -385,9 +415,9 @@
 					<Menu.Item value="merge">Merge cells</Menu.Item>
 					<Menu.Item value="split">Split cell</Menu.Item>
 					<Menu.Separator />
-					<Menu.Item value="toggle-borders"
-						>{isTableBorderless ? 'Show borders' : 'Hide borders'}</Menu.Item
-					>
+					<Menu.Item value="toggle-borders">
+						{isTableBorderless ? 'Show borders' : 'Hide borders'}
+					</Menu.Item>
 					<Menu.Separator />
 					<Menu.Item value="delete-table">Delete table</Menu.Item>
 				{/if}
@@ -398,8 +428,8 @@
 	{#if hasTemplateVariable && templateFields.length > 0}
 		<div class="h-5 w-px bg-border"></div>
 		<Menu.Root onSelect={({ value }: { value: string }) => insertTemplateVariable(value)}>
-			<Menu.Trigger variant="ghost" size="icon">
-				<PhBracketsCurly class="size-6" />
+			<Menu.Trigger variant="ghost" size="icon-sm">
+				<PhBracketsCurly />
 			</Menu.Trigger>
 			<Menu.Content>
 				{#each groupedTemplateFields as [group, fields], groupIndex (group)}
@@ -417,26 +447,31 @@
 		</Menu.Root>
 	{/if}
 
+	<div class="h-5 w-px bg-border"></div>
+	<Button size="icon-sm" variant="ghost" aria-label="Insert HTML" onclick={openHtmlDialog}>
+		<PhCodeSimple />
+	</Button>
+
 	{#if hasHorizontalRule || hasPageBreak}
 		<div class="h-5 w-px bg-border"></div>
 		{#if hasHorizontalRule}
 			<Button
-				size="icon"
+				size="icon-sm"
 				variant="ghost"
 				aria-label="Insert horizontal rule"
 				onclick={() => ed().chain().focus().setHorizontalRule().run()}
 			>
-				<PhMinus class="size-6" />
+				<PhMinus />
 			</Button>
 		{/if}
 		{#if hasPageBreak}
 			<Button
-				size="icon"
+				size="icon-sm"
 				variant="ghost"
 				aria-label="Insert page break"
 				onclick={() => ed().chain().focus().insertPageBreak().run()}
 			>
-				<PhScissors class="size-6" />
+				<PhScissors />
 			</Button>
 		{/if}
 	{/if}
@@ -445,15 +480,44 @@
 		<div class="ml-auto flex items-center gap-1">
 			<div class="h-5 w-px bg-border"></div>
 			{#if onSave}
-				<Button size="icon" variant="ghost" aria-label="Save" disabled={isSaving} onclick={onSave}>
-					<PhFloppyDisk class="size-6" />
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					aria-label="Save"
+					disabled={isSaving}
+					onclick={onSave}
+				>
+					<PhFloppyDisk />
 				</Button>
 			{/if}
 			{#if onPrint}
-				<Button size="icon" variant="ghost" aria-label="Print" onclick={onPrint}>
-					<PhPrinter class="size-6" />
+				<Button size="icon-sm" variant="ghost" aria-label="Print" onclick={onPrint}>
+					<PhPrinter />
 				</Button>
 			{/if}
 		</div>
 	{/if}
 </div>
+
+<Dialog.Root bind:open={htmlDialogOpen} contentClass="max-w-3xl">
+	<Dialog.Title>Insert HTML</Dialog.Title>
+	<Dialog.Description>
+		Paste markup to insert at the cursor. A full document is accepted — only the body is used. Tags
+		the editor does not support are dropped.
+	</Dialog.Description>
+	<Field.Root invalid={htmlSourceInvalid}>
+		<Field.Textarea
+			bind:value={htmlSource}
+			rows={14}
+			class="font-mono text-sm"
+			placeholder="&lt;p&gt;Hello&lt;/p&gt;"
+		/>
+		{#if htmlSourceInvalid}
+			<Field.ErrorText>This does not look like HTML — it will be inserted as text.</Field.ErrorText>
+		{/if}
+	</Field.Root>
+	<Dialog.Footer>
+		<Dialog.CloseTrigger>Cancel</Dialog.CloseTrigger>
+		<Button disabled={htmlSource.trim() === ''} onclick={insertHtml}>Insert</Button>
+	</Dialog.Footer>
+</Dialog.Root>

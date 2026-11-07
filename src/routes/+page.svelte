@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { DocumentEditor, PAGE_FORMAT_KEYS, getPageGeometry } from '$lib';
+	import { DocumentEditor, PAGE_FORMAT_KEYS, getPageGeometry } from '#lib';
 	import type { JSONContent } from '@tiptap/core';
-	import type { PageFormatKey, TemplateVariableDefinition } from '$lib';
+	import type { PageFormatKey, TemplateVariableDefinition } from '#lib';
 	import { JsonTreeView, ScrollArea } from 'compote-ui';
 
 	let format = $state<PageFormatKey>('A4');
